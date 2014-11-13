@@ -1,0 +1,74 @@
+Algeria
+Benin
+Burkina Faso
+Burundi
+Cameroon
+Central African Republic
+Chad
+Democratic Republic of the Congo
+Republic of the Congo
+Ivory Coast
+Djibouti
+Egypt
+Ethiopia
+Ghana
+Guinea
+Guinea-Bissau
+Kenya
+Lesotho
+Liberia
+Madagascar
+Malawi
+Mali
+Mauritania
+Mozambique
+Namibia
+Niger
+Rwanda
+São Tomé and Principe
+Senegal
+Sierra Leone
+Somalia
+South Sudan
+Sudan
+Swaziland
+Tanzania
+Gambia
+Togo
+Tunisia
+Uganda
+Zambia
+Zimbabwe
+Bolivia
+Colombia
+Cuba
+Ecuador
+El Salvador
+Guatemala
+Haiti
+Honduras
+Nicaragua
+Peru
+Afghanistan
+Armenia
+Bangladesh
+Bhutan
+Cambodia
+India
+Indonesia
+North Korea
+Kyrgyzstan
+Laos
+Myanmar (Burma)
+Nepal
+Pakistan
+Philippines
+Sri Lanka
+Tajikistan
+Timor-Leste
+Iran
+Iraq
+Jordan
+Palestina
+Syria
+Yemen
