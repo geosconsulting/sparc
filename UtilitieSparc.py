@@ -12,6 +12,11 @@ import psycopg2
 import psycopg2.extras
 from osgeo import ogr
 ogr.UseExceptions()
+import arcpy
+from arcpy import env
+
+# Check out any necessary licenses
+arcpy.CheckOutExtension("spatial")
 
 class UtilitieSparc(object):
 
@@ -118,13 +123,18 @@ class UtilitieSparc(object):
         tabella = dbf.Table('monthly_values', 'month C(10);mean N(5,1)')
         return tabella.filename
 
-class GeocodeCsv(object):
+class GeocodingEmDat(object):
 
     def __init__(self,paese):
         self.paese = paese
         self.historical_table = "input_data/historical_data/floods - refine.csv"
         self.geolocator = Nominatim()
         self.geolocator_geonames = GeoNames(country_bias=self.paese, username='fabiolana', timeout=1)
+        self.outDriver = ogr.GetDriverByName("ESRI Shapefile")
+        self.countries_shp_location = os.getcwd() + '/input_data/countries'
+        self.outShp = os.getcwd() + "/input_data/geocoded/shp/" + self.paese + ".shp"
+        self.events_location = os.getcwd() + '/input_data/geocoded/shp/'
+        self.risk_map_location = os.getcwd() + '/input_data/geocoded/risk_map/'
 
     def geolocate_accidents(self):
 
@@ -153,7 +163,7 @@ class GeocodeCsv(object):
 
         # Control if accidents have been geocoded already
         if os.path.exists(geocoding_success_file):
-            print "Geocoded already!!"
+            return "Geocoded already!!"
             pass
         else:
             geocoding_success = open(geocoding_success_file, "wb+")
@@ -266,8 +276,8 @@ class GeocodeCsv(object):
         dentro = 0
         fuori = 0
 
-        coords_check_file_in = "classes/geocodifica/text/" + self.paese + ".txt"
-        coords_validated_file_out = str('classes/geocodifica/csv/' + str(self.paese) + '.csv')
+        coords_check_file_in = "input_data/geocoded/text/" + self.paese + ".txt"
+        coords_validated_file_out = str('input_data/geocoded/csv/' + str(self.paese) + '.csv')
         if os.path.exists("input_data/countries/" + self.paese + ".shp"):
             sf = shapefile.Reader("input_data/countries/" + str(self.paese).lower() + ".shp")
             calc_poligono_controllo()
@@ -294,13 +304,6 @@ class GeocodeCsv(object):
         csvfile_in.close()
         #print "dentro %d" % dentro, "fuori %d" % fuori
 
-class CreateGeocodedShp(object):
-
-    def __init__(self,paese):
-        self.paese = paese
-        self.outDriver = ogr.GetDriverByName("ESRI Shapefile")
-        self.outShp = "classes/geocodifica/shp/" + self.paese + ".shp"
-
     def creazione_file_shp(self):
         # Remove output shapefile if it already exists
         if os.path.exists(self.outShp):
@@ -310,7 +313,7 @@ class CreateGeocodedShp(object):
         x, y, nomeloc=[], [], []
 
         #read data from csv file and store in lists
-        with open('classes/geocodifica/csv/'+str(self.paese) + '.csv', 'rb') as csvfile:
+        with open('input_data/geocoded/csv/'+str(self.paese) + '.csv', 'rb') as csvfile:
             r = csv.reader(csvfile, delimiter=';')
             for i, row in enumerate(r):
                 if i > 0: #skip header
@@ -338,6 +341,85 @@ class CreateGeocodedShp(object):
 
         #Save shapefile
         w.save(self.outShp)
+
+    def plot_mappa(self):
+
+        def GetExtent(gt,cols,rows):
+            ext=[]
+            xarr=[0, cols]
+            yarr=[0, rows]
+
+            for px in xarr:
+                for py in yarr:
+                    x=gt[0]+(px*gt[1])+(py*gt[2])
+                    y=gt[3]+(px*gt[4])+(py*gt[5])
+                    ext.append([x,y])
+                    #print x,y
+                yarr.reverse()
+            return ext
+
+        pathToRaster = "input_data/geocoded/risk_map/" + self.paese + ".tif"
+        from mpl_toolkits.basemap import Basemap
+        import matplotlib.pyplot as plt
+        import numpy as np
+        from osgeo import gdal
+
+        raster = gdal.Open(pathToRaster, gdal.GA_ReadOnly)
+        array = raster.GetRasterBand(1).ReadAsArray()
+        msk_array = np.ma.masked_equal(array, value=65535)
+        # print 'Raster Projection:\n', raster.GetProjection()
+        geotransform = raster.GetGeoTransform()
+        cols = raster.RasterXSize
+        rows = raster.RasterYSize
+        ext = GetExtent(geotransform, cols, rows)
+        #print ext[1][0], ext[1][1]
+        #print ext[3][0], ext[3][1]
+
+        #map = Basemap(projection='merc',llcrnrlat=-80, urcrnrlat=80, llcrnrlon=-180,urcrnrlon=180,lat_ts=20,resolution='c')
+        map = Basemap(projection='merc', llcrnrlat=ext[1][1], urcrnrlat=ext[3][1], llcrnrlon=ext[1][0], urcrnrlon=ext[3][0],lat_ts=20, resolution='c')
+
+        # Add some additional info to the map
+        map.drawcoastlines(linewidth=1.3, color='white')
+        #map.drawrivers(linewidth=.4, color='white')
+        map.drawcountries(linewidth=.75, color='white')
+        #datain = np.flipud(msk_array)
+        datain = np.flipud(msk_array)
+        map.imshow(datain)#,origin='lower',extent=[ext[1][0], ext[3][0],ext[1][1],ext[3][1]])
+
+        plt.show()
+
+    def add_prj(self):
+
+        env.workspace = self.events_location
+        inData = self.paese + ".shp"
+        print "Proietto " + inData
+        try:
+            coordinateSystem = "GEOGCS['GCS_WGS_1984',DATUM['D_WGS_1984',SPHEROID['WGS_1984',6378137.0,298.257223563]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]]"
+            arcpy.DefineProjection_management(inData, coordinateSystem)
+        except arcpy.ExecuteError:
+            print arcpy.GetMessages(2)
+            arcpy.AddError(arcpy.GetMessages(2))
+        except Exception as e:
+            print e.args[0]
+            arcpy.AddError(e.args[0])
+
+    def create_heat_map(self):
+
+        # Local variables:
+        event_file_shp = self.events_location + self.paese + ".shp"
+        krn_map_file = self.risk_map_location + self.paese + ".tif"
+
+        try:
+            # Process: Kernel Density
+            arcpy.gp.KernelDensity_sa(event_file_shp, "NONE", krn_map_file, "0.02", "", "SQUARE_MAP_UNITS")
+        except arcpy.ExecuteError:
+            print "Errore" + self.paese
+            print arcpy.GetMessages(2)
+            arcpy.AddError(arcpy.GetMessages(2))
+        except Exception as e:
+            print "Exception " + self.paese
+            print e.args[0]
+            arcpy.AddError(e.args[0])
 
 
 class ManagePostgresDB(object):

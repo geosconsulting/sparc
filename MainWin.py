@@ -3,7 +3,6 @@
 import HazardAssessment as ha
 import MonthlyDistribution as monDist
 import UtilitieSparc as us
-from superati import mappa_pyplot
 
 __author__ = 'fabio.lana'
 
@@ -74,13 +73,16 @@ class AppSPARC:
     def emdat(self):
 
         paese = self.box_value_adm0.get()
-        mappa_pyplot.plot_mappa(paese)
-        nuova_geocodifica = us.GeocodeCsv(paese)
-        nuova_geocodifica.geolocate_accidents()
-        nuova_geocodifica.create_validated_coords()
-        self.area_messaggi.insert(INSERT, "Geocoding Terminated\n")
-        nuova_shp_geocodifica = us.CreateGeocodedShp(paese)
-        nuova_shp_geocodifica.creazione_file_shp()
+        nuova_geocodifica = us.GeocodingEmDat(paese)
+        if nuova_geocodifica.geolocate_accidents() == "Geocoded already!!":
+            nuova_geocodifica.plot_mappa()
+        else:
+            nuova_geocodifica.create_validated_coords()
+            self.area_messaggi.insert(INSERT, "Geocoding Terminated\n")
+            nuova_geocodifica.creazione_file_shp()
+            self.area_messaggi.insert(INSERT, "Shapefile Created\n")
+            nuova_geocodifica.create_heat_map()
+            self.area_messaggi.insert(INSERT, "HeatMap Created\n")
 
     def create_project(self):
 
