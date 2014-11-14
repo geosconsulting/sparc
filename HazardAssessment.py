@@ -43,7 +43,6 @@ class HazardAssessment(object):
 
         self.dati_per_plot = {}
         self.dati_per_prob = {}
-
         self.paese = paese
         self.admin = admin
         self.dirOut = HazardAssessment.proj_dir + paese + "/" + admin + "/"

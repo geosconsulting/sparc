@@ -22,7 +22,12 @@ class UtilitieSparc(object):
 
     proj_dir = os.getcwd() + "/projects/"
     driver = ogr.GetDriverByName("ESRI Shapefile")
+    #DA MAIN
     shape_countries = "input_data/gaul/gaul_wfp.shp"
+
+    #DA RECORSIVO
+    #shape_countries = "c:/data/tools/sparc/input_data/gaul/gaul_wfp.shp"
+
     campo_nome_paese = "ADM0_NAME"
     campo_iso_paese = "ADM0_CODE"
     campo_nome_admin = "ADM2_NAME"
@@ -305,6 +310,7 @@ class GeocodingEmDat(object):
         #print "dentro %d" % dentro, "fuori %d" % fuori
 
     def creazione_file_shp(self):
+
         # Remove output shapefile if it already exists
         if os.path.exists(self.outShp):
             self.outDriver.DeleteDataSource(self.outShp)
@@ -420,7 +426,6 @@ class GeocodingEmDat(object):
             print "Exception " + self.paese
             print e.args[0]
             arcpy.AddError(e.args[0])
-
 
 class ManagePostgresDB(object):
 

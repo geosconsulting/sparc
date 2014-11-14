@@ -2,9 +2,6 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/../wfp/os_version" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/../wfp/agis_release" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/input_data" />
       <excludeFolder url="file://$MODULE_DIR$/projects" />
     </content>

@@ -11,8 +11,10 @@ ogr.UseExceptions()
 
 class Recorsivo():
 
-    def __init__(self):
+    def __init__(self, paese):
 
+        self.paese = paese
+        self.proj_dir = os.getcwd() + "/projects/"
         driver = ogr.GetDriverByName("ESRI Shapefile")
         self.shape_countries = "c:/data/tools/sparc/input_data/gaul/gaul_wfp.shp"
         self.campo_nome_paese = "ADM0_NAME"
@@ -36,7 +38,7 @@ class Recorsivo():
         lista_admin0 = sorted(lista_pulita)
         return lista_admin0
 
-    def lista_admin2(self,paese):
+    def lista_admin2(self, paese):
 
         country_capitalized = paese.capitalize()
         self.layer.SetAttributeFilter(self.campo_nome_paese + " = '" + country_capitalized + "'")
@@ -70,14 +72,40 @@ class Recorsivo():
 
         return lista_admin2, listone
 
-paese = "Honduras"
+    def creazione_struttura(self, admin_global):
+
+        # Check in data structures exists and in case not create the directory named
+        # after the country and all the directories
+
+        os.chdir(self.proj_dir)
+        country_low = str(self.paese).lower()
+        if os.path.exists(country_low):
+           os.chdir(self.proj_dir + country_low)
+           admin_low = str(self.admin).lower()
+           if os.path.exists(admin_low):
+               pass
+           else:
+              os.mkdir(admin_low)
+        else:
+            os.chdir(self.proj_dir)
+            os.mkdir(country_low)
+            os.chdir(self.proj_dir + country_low)
+            admin_low = str(self.admin).lower()
+            if os.path.exists(admin_low):
+                pass
+            else:
+                os.mkdir(admin_low)
+
+        return "Project created......\n"
+paese = "Togo"
 generazione_di_fenomeni = Recorsivo()
 
 # for paese in nuova_generazione_di_fenomeni.lista_admin0():
 #     print paese
 illoli = generazione_di_fenomeni.lista_admin2(paese)[1]
 
-import UtilitieSparc as us
 for illo in illoli.iteritems():
     admin_global = illo[1]['name_orig']
-    us.UtilitieSparc(paese, admin_global)
+    print(paese, admin_global)
+    nuovo = Recorsivo(paese)
+    nuovo.creazione_struttura(admin_global)

@@ -1,20 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+__author__ = 'fabio.lana'
+
 import HazardAssessment as ha
 import MonthlyDistribution as monDist
 import UtilitieSparc as us
-
-__author__ = 'fabio.lana'
 
 from Tkinter import *
 import ttk
 
 class AppSPARC:
-
-    proj_dir = "projects/"
-    shape_countries = "input_data/gaul/gaul_wfp.shp"
-    pop_distr = "input_data/population/popmap10.tif"
-    flood_aggregated = "input_data/flood/rp_aggregat.tif"
 
     def __init__(self, master):
 
@@ -48,7 +43,6 @@ class AppSPARC:
         self.button = Button(frame, text="Monthly Probability", fg="red", command=self.monthly_distribution).pack(side=LEFT)
         self.button = Button(frame, text="Vulnerability", fg="red", command=frame.quit).pack(side=LEFT)
         self.button = Button(frame, text="Risk Assessment", fg="red", command=frame.quit).pack(side=LEFT)
-
         self.button = Button(frame, text="Next Step", fg="blue", command=frame.quit).pack(side=LEFT)
 
         root = Tk()
@@ -63,6 +57,7 @@ class AppSPARC:
         #root.config(menu=menubar)
 
     def sub_select(self):
+
         self.box_adm2.set(" ")
         paese_scelto = self.box_value_adm0.get()
         ut2 = us.UtilitieSparc(paese_scelto, "")
@@ -75,6 +70,7 @@ class AppSPARC:
         paese = self.box_value_adm0.get()
         nuova_geocodifica = us.GeocodingEmDat(paese)
         if nuova_geocodifica.geolocate_accidents() == "Geocoded already!!":
+            self.area_messaggi.insert(INSERT, "Geocoded already!!\n")
             nuova_geocodifica.plot_mappa()
         else:
             nuova_geocodifica.create_validated_coords()
