@@ -2,12 +2,11 @@ __author__ = 'fabio.lana'
 
 import unicodedata
 import re
-import dbf
-import csv
 import os
-import shapefile
 from osgeo import ogr
 ogr.UseExceptions()
+
+import HazardAssessmentCountry as ha
 
 class Recorsivo():
 
@@ -16,7 +15,7 @@ class Recorsivo():
         self.paese = paese
         self.proj_dir = os.getcwd() + "/projects/"
         driver = ogr.GetDriverByName("ESRI Shapefile")
-        self.shape_countries = "c:/data/tools/sparc/input_data/gaul/gaul_wfp.shp"
+        self.shape_countries = os.getcwd() + "/input_data/gaul/gaul_wfp.shp"
         self.campo_nome_paese = "ADM0_NAME"
         self.campo_iso_paese = "ADM0_CODE"
         self.campo_nome_admin = "ADM2_NAME"
@@ -38,9 +37,9 @@ class Recorsivo():
         lista_admin0 = sorted(lista_pulita)
         return lista_admin0
 
-    def lista_admin2(self, paese):
+    def lista_admin2(self):
 
-        country_capitalized = paese.capitalize()
+        country_capitalized = self.paese.capitalize()
         self.layer.SetAttributeFilter(self.campo_nome_paese + " = '" + country_capitalized + "'")
 
         listone={}
@@ -72,40 +71,45 @@ class Recorsivo():
 
         return lista_admin2, listone
 
-    def creazione_struttura(self, admin_global):
-
-        # Check in data structures exists and in case not create the directory named
-        # after the country and all the directories
+    def creazione_struttura(self,admin_inviata):
 
         os.chdir(self.proj_dir)
         country_low = str(self.paese).lower()
         if os.path.exists(country_low):
-           os.chdir(self.proj_dir + country_low)
-           admin_low = str(self.admin).lower()
-           if os.path.exists(admin_low):
-               pass
-           else:
-              os.mkdir(admin_low)
+            os.chdir(self.proj_dir + country_low)
+            admin_low = admin_inviata.lower()
+            if os.path.exists(admin_low):
+                pass
+            else:
+                os.mkdir(admin_low)
         else:
             os.chdir(self.proj_dir)
             os.mkdir(country_low)
             os.chdir(self.proj_dir + country_low)
-            admin_low = str(self.admin).lower()
+            admin_low = admin_inviata.lower()
             if os.path.exists(admin_low):
                 pass
             else:
                 os.mkdir(admin_low)
 
-        return "Project created......\n"
+        #return "Project created......\n"
+
 paese = "Togo"
-generazione_di_fenomeni = Recorsivo()
+# generazione_di_fenomeni = Recorsivo(paese)
+# lista_amministrazioni = generazione_di_fenomeni.lista_admin2()[1]
+# for aministrazione in lista_amministrazioni.iteritems():
+#     code_admin = aministrazione[0]
+#     #nome_admin = aministrazione[1]['name_orig']
+#     nome_admin = aministrazione[1]['name_clean']
+#     print nome_admin
+#     generazione_di_fenomeni.creazione_struttura(nome_admin)
+#     newHazardAssessment = ha.HazardAssessmentCountry(paese,nome_admin,code_admin)
+#     newHazardAssessment.estrazione_poly_admin()
+#     newHazardAssessment.conversione_vettore_raster_admin()
+#     newHazardAssessment.taglio_raster_popolazione()
+#     # newHazardAssessment.taglio_raster_inondazione_aggregato()
+#     newHazardAssessment.taglio_raster_inondazione()
+#     # newHazardAssessment.calcolo_statistiche_zone_indondazione()
 
-# for paese in nuova_generazione_di_fenomeni.lista_admin0():
-#     print paese
-illoli = generazione_di_fenomeni.lista_admin2(paese)[1]
-
-for illo in illoli.iteritems():
-    admin_global = illo[1]['name_orig']
-    print(paese, admin_global)
-    nuovo = Recorsivo(paese)
-    nuovo.creazione_struttura(admin_global)
+from osgeo import gdalnumeric
+raster = r"C:\data\tools\sparc\projects\togo\agou\Agou_pop.tif"

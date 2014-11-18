@@ -429,19 +429,20 @@ class GeocodingEmDat(object):
 
 class ManagePostgresDB(object):
 
-    def __init__(self,paese,admin,schema,tabella_pesi, tabella_pop_stat):
+    def __init__(self, paese, admin):
         self.paese = paese
         self.admin = admin
-        self.proj_dir = "projects/"
+        self.proj_dir = os.getcwd() + "projects/"
         self.dirOut = self.proj_dir + self.paese + "/" + self.admin + "/"
-        self.schema = schema
-        self.tabella_pesi = tabella_pesi
-        self.tabella_pop_stat = tabella_pop_stat
+
         try:
             self.conn = psycopg2.connect("dbname=sparc user=postgres")
         except Exception as e:
             print e.message
         self.cur = self.conn.cursor()
+
+        self.annual_table = 'annual_results'
+        self.monthly_table = 'monthly_results'
 
     def fetch_results(self):
 
@@ -477,6 +478,16 @@ class ManagePostgresDB(object):
             tabella_esistente = laTabellaEsiste.pgerror
             return "Table does not exist", tabella_esistente
 
+    def leggi_tabella(self):
+
+        cursor = self.conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
+        comando = "SELECT c.name,c.iso2,c.iso3,a.area_name FROM wfp_countries c INNER JOIN wfp_areas a ON c.wfp_area = a.area_id WHERE c.name = '" + self.paese + "';"
+        cursor.execute(comando)
+        row_count = 0
+        for row in cursor:
+            row_count += 1
+            return (row[0], row[1],row[2],row[3])
+
     def cancella_tabella(self):
 
         comando_delete_table = "DROP TABLE " + self.schema + "." + self.tabella_pesi + " CASCADE;"
@@ -500,54 +511,57 @@ class ManagePostgresDB(object):
             print descrizione_errore,codice_errore
             return descrizione_errore, codice_errore
 
-    def crea_tabella_weight(self):
+    def create_table_annual(self):
 
         SQL = "CREATE TABLE %s.%s %s;"
-        campi_weight = "(id serial PRIMARY KEY,month integer,weight double precision)"
+        campi_annual =  """(id serial,
+                   iso3 character(3),
+                   adm1_code character(5),
+                   adm2_code character(5),
+                   adm2_name character(120),
+                   pop_25 integer,
+                   pop_50 integer,
+                   pop_100 integer,
+                   pop_150 integer,
+                   pop_200 integer,
+                   pop_250 integer,
+                   pop_500 integer,
+                   pop_750 integer,
+                   pop_1000 integer,"""
 
-        try:
-            self.cur.execute(SQL % (self.schema,self.tabella_pesi,campi_weight))
-            #self.cur.execute(comando)
-            return "Table created"
-        except psycopg2.Error as createErrore:
-            descrizione_errore = createErrore.pgerror
-            codice_errore = createErrore.pgcode
-            return descrizione_errore, codice_errore
+        # try:
+        #     self.cur.execute(SQL % (self.annual_table,campi_annual))
+        #     #self.cur.execute(comando)
+        #     return "Table created"
+        # except psycopg2.Error as createErrore:
+        #     descrizione_errore = createErrore.pgerror
+        #     codice_errore = createErrore.pgcode
+        #     return descrizione_errore, codice_errore
 
-    def crea_tabella_weight_norm(self):
-
-        SQL = "CREATE TABLE %s.%s %s;"
-        campi_weight = "(id serial PRIMARY KEY,month integer,weight double precision)"
-
-        try:
-            self.cur.execute(SQL % (self.schema,self.tabella_pesi,campi_weight))
-            #self.cur.execute(comando)
-            return "Table created"
-        except psycopg2.Error as createErrore:
-            descrizione_errore = createErrore.pgerror
-            codice_errore = createErrore.pgcode
-            return descrizione_errore, codice_errore
-
-    def crea_tabella_pop(self):
-
-        SQL = "CREATE TABLE %s.%s %s;"
-        campi_weight = "(id serial PRIMARY KEY,month integer,weight double precision)"
-
-        try:
-            self.cur.execute(SQL % (self.schema,self.tabella_pesi,campi_weight))
-            #self.cur.execute(comando)
-            return "Table created"
-        except psycopg2.Error as createErrore:
-            descrizione_errore = createErrore.pgerror
-            codice_errore = createErrore.pgcode
-            return descrizione_errore, codice_errore
-
-    def crea_tabella_pop_month(self):
+    def create_table_monthly(self):
 
         SQL = "CREATE TABLE %s.%s %s;"
-        campi_weight = "(rp integer NOT NULL,jan integer,feb integer,mar integer, apr integer, may integer, jun integer, jul integer, aug integer, sep integer, oct integer, nov integer,dec integer"
-        constraint = "CONSTRAINT pop_month_pkey PRIMARY KEY (rp)"
-        print (SQL % campi_weight)
+        campi_monthly = """(
+           id serial,
+           title character(9),
+           jan integer,
+           feb integer,
+           mar integer,
+           apr integer,
+           may integer,
+           jun integer,
+           jul integer,
+           ago integer,
+           set integer,
+           oct integer,
+           nov integer,
+           dec integer,
+           iso3 character(3),
+           adm1_code character(5),
+           adm2_code character(5),
+           adm2_name character(120),"""
+        constraint = "CONSTRAINT annual_pkey PRIMARY KEY (id)"
+        print (SQL % campi_monthly % constraint)
         # try:
         #     self.cur.execute(SQL % (self.schema,self.tabella_pesi,campi_weight))
         #     #self.cur.execute(comando)
@@ -557,22 +571,11 @@ class ManagePostgresDB(object):
         #     codice_errore = createErrore.pgcode
         #     return descrizione_errore, codice_errore
 
-
-
     def inserisci_valori_calcolati(self):
         pass
         # for chiave, valore in val_prec.items():
         #     inserimento = "INSERT INTO " + self.schema + "." + self.nome_tabella + " (month, weight) VALUES (" + str(chiave) + "," + str(valore) + ");"
         #     self.cur.execute(inserimento)
-
-    def leggi_tabella(self):
-
-        cursor = self.conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT * FROM " + self.tabella_pesi + " LIMIT 1000")
-        row_count = 0
-        for row in cursor:
-            row_count += 1
-            print "row:%s %.2f" % (row[1],row[2])
 
     def salva_cambi(self):
         try:
