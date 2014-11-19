@@ -63,7 +63,7 @@ def merge_floods(paese):
     ar500 = gdalnumeric.LoadFile(im_rp_500).astype(np.int16)
     ar1000 = gdalnumeric.LoadFile(im_rp_1000).astype(np.int16)
     somma = ar25 + ar50 + ar100 + ar200 + ar500 + ar1000
-    gdalnumeric.SaveArray(somma, paese + "_all_rp.tif", format="GTiff", prototype=im_rp_1000)
+    gdalnumeric.SaveArray(somma, "C:/data/tools/sparc/input_data/flood/merged/" + paese + "_all_rp.tif", format="GTiff", prototype=im_rp_1000)
 
 def reclass_flood(paese):
 
@@ -76,13 +76,13 @@ def reclass_flood(paese):
     env.overwriteOutput = "true"
 
     # Local variables:
-    Afghanistan_all_rp = "C:\\data\\tools\\sparc\\input_data\\flood\\masks\\" + paese + "_all_rp.tif"
-    Afghanistan_all_rp_rcl = "C:\\data\\tools\\sparc\\input_data\\flood\\merged\\" + paese + "_all_rp_rcl.tif"
+    paese_all_rp = "C:\\data\\tools\\sparc\\input_data\\flood\\merged\\" + paese + "_all_rp.tif"
+    paese_all_rp_rcl = "C:\\data\\tools\\sparc\\input_data\\flood\\merged\\" + paese + "_all_rp_rcl.tif"
 
     # Process: Reclassify
-    arcpy.gp.Reclassify_sa(Afghanistan_all_rp, "Value", "0 NODATA;1000 1000;1500 500;1700 200;1800 100;1850 50;1875 25", Afghanistan_all_rp_rcl, "DATA")
+    arcpy.gp.Reclassify_sa(paese_all_rp, "Value", "0 NODATA;1000 1000;1500 500;1700 200;1800 100;1850 50;1875 25", paese_all_rp_rcl, "DATA")
 
-reclass_floods('Zimbabwe')
-merge_floods('Zimbabwe')
+#reclass_floods('India')
+#merge_floods('Zimbabwe')
 reclass_flood('Zimbabwe')
 

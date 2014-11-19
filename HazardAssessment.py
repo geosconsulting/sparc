@@ -55,8 +55,8 @@ class HazardAssessment(object):
 
         self.wfp_area = str(wfp_area).strip()
         self.iso3 = iso3
-
-        self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10v4.tif" #popmap10.tif"
+        print "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif"
+        self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif"
         #self.flood_aggregated = os.getcwd() + "/input_data/flood/rp_aggregat.tif"
         self.flood_aggregated = "C:/data/tools/sparc/input_data/flood/merged/" + self.paese + "_all_rp_rcl.tif"
         self.historical_accidents = "C:/data/tools/sparc/input_data/historical_data/floods.csv"
@@ -130,6 +130,7 @@ class HazardAssessment(object):
             # Set geometry as centroid
             geom = inFeature.GetGeometryRef()
             outFeature.SetGeometry(geom.Clone())
+
             # Add new feature to output Layer
             outLayer.CreateFeature(outFeature)
 
@@ -147,6 +148,7 @@ class HazardAssessment(object):
         if len(self.admin) > 5:
             admin = self.admin[0:3]
         admin_rast = self.dirOut + self.admin + "_rst.tif"
+        print admin_rast
 
         try:
             admin_rast = arcpy.PolygonToRaster_conversion(admin_vect, "ADM2_NAME", admin_rast, "CELL_CENTER", "NONE", 0.0008333)
@@ -172,14 +174,6 @@ class HazardAssessment(object):
         return "Flood hazard aggregated clipped....\n"
 
     def taglio_raster_inondazione(self):
-
-        # indice = 0
-        # for rp in self.flood_extents:
-        #     #CUT and SAVE Flooded areas within the admin2 area
-        #     flood_divided_rst = arcpy.Raster(self.flood_extents[indice]) * arcpy.Raster(admin_rast)
-        #     flood_out_divided = self.dirOut + rp.split("/")[4].split(".")[0] + "_fld.tif"
-        #     flood_divided_rst.save(flood_out_divided)
-        #     indice =+ indice
 
         for rp in self.flood_extents:
             #CUT and SAVE Flooded areas within the admin2 area
@@ -220,9 +214,9 @@ class HazardAssessment(object):
         plt.grid(True)
         plt.title(self.admin)
         plt.xlabel("Return Periods")
-        plt.ylabel("People in Flood Prone Area EM-DAT")
+        plt.ylabel("People in Flood Prone Area WorldPop 2010")
         plt.bar(range(len(affected_people_ordered)), affected_people_ordered.values(), align='center')
-        plt.xticks(range(len(affected_people_ordered)), affected_people_ordered.keys(), rotation='vertical')
+        plt.xticks(range(len(affected_people_ordered)), affected_people_ordered.keys())
         plt.show()
         return affected_people
 

@@ -6,7 +6,7 @@ import os
 from osgeo import ogr
 ogr.UseExceptions()
 
-import HazardAssessmentCountry as ha
+import CompleteProcessing as completeSparc
 
 class Recorsivo():
 
@@ -95,21 +95,25 @@ class Recorsivo():
         #return "Project created......\n"
 
 paese = "Togo"
-# generazione_di_fenomeni = Recorsivo(paese)
-# lista_amministrazioni = generazione_di_fenomeni.lista_admin2()[1]
-# for aministrazione in lista_amministrazioni.iteritems():
-#     code_admin = aministrazione[0]
-#     #nome_admin = aministrazione[1]['name_orig']
-#     nome_admin = aministrazione[1]['name_clean']
-#     print nome_admin
-#     generazione_di_fenomeni.creazione_struttura(nome_admin)
-#     newHazardAssessment = ha.HazardAssessmentCountry(paese,nome_admin,code_admin)
-#     newHazardAssessment.estrazione_poly_admin()
-#     newHazardAssessment.conversione_vettore_raster_admin()
-#     newHazardAssessment.taglio_raster_popolazione()
-#     # newHazardAssessment.taglio_raster_inondazione_aggregato()
-#     newHazardAssessment.taglio_raster_inondazione()
-#     # newHazardAssessment.calcolo_statistiche_zone_indondazione()
-
-from osgeo import gdalnumeric
-raster = r"C:\data\tools\sparc\projects\togo\agou\Agou_pop.tif"
+generazione_di_fenomeni = Recorsivo(paese)
+lista_amministrazioni = generazione_di_fenomeni.lista_admin2()[1]
+for aministrazione in lista_amministrazioni.iteritems():
+    code_admin = aministrazione[0]
+    #nome_admin = aministrazione[1]['name_orig']
+    nome_admin = aministrazione[1]['name_clean']
+    print nome_admin
+    generazione_di_fenomeni.creazione_struttura(nome_admin)
+    newHazardAssessment = completeSparc.HazardAssessmentCountry(paese,nome_admin,code_admin)
+    newHazardAssessment.estrazione_poly_admin()
+    newHazardAssessment.conversione_vettore_raster_admin()
+    print newHazardAssessment.taglio_raster_popolazione()
+    esiste_flood = newHazardAssessment.taglio_raster_inondazione_aggregato()
+    if esiste_flood == "Flood":
+        print newHazardAssessment.calcolo_statistiche_zone_inondazione()
+    else:
+        pass
+    newMonthlyAssessment = completeSparc.MonthlyAssessmentCountry(paese,nome_admin,code_admin)
+    print newMonthlyAssessment.cut_monthly_rasters()
+    print newMonthlyAssessment.analisi_valori_da_normalizzare()
+    print newMonthlyAssessment.population_flood_prone_areas()
+    print newMonthlyAssessment.calcolo_finale()
