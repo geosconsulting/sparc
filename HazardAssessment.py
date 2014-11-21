@@ -51,7 +51,7 @@ class HazardAssessment(object):
         self.dirOut = HazardAssessment.proj_dir + paese + "/" + admin + "/"
 
         scrittura_risultati = us.ManagePostgresDB(paese,admin)
-        nome, iso2, iso3, wfp_area = scrittura_risultati.leggi_tabella()
+        nome, iso2, iso3, wfp_area = scrittura_risultati.leggi_valori_amministrativi()
 
         self.wfp_area = str(wfp_area).strip()
         self.iso3 = iso3
@@ -180,8 +180,6 @@ class HazardAssessment(object):
             flood_divided_rst = arcpy.Raster(rp) * arcpy.Raster(admin_rast)
             flood_out_divided = self.dirOut + rp.split("/")[7].split("_")[1] + "_fld.tif"
             flood_divided_rst.save(flood_out_divided)
-
-        return "Clipped all floods.......\n"
 
         return "Clipped all floods.......\n"
 

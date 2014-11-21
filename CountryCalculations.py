@@ -1,119 +1,109 @@
 __author__ = 'fabio.lana'
 
-import unicodedata
-import re
 import os
 from osgeo import ogr
 ogr.UseExceptions()
 
 import CompleteProcessing as completeSparc
 
-class Recorsivo():
-
-    def __init__(self, paese):
-
-        self.paese = paese
-        self.proj_dir = os.getcwd() + "/projects/"
-        driver = ogr.GetDriverByName("ESRI Shapefile")
-        self.shape_countries = os.getcwd() + "/input_data/gaul/gaul_wfp.shp"
-        self.campo_nome_paese = "ADM0_NAME"
-        self.campo_iso_paese = "ADM0_CODE"
-        self.campo_nome_admin = "ADM2_NAME"
-        self.campo_iso_admin = "ADM2_CODE"
-        self.shapefile = driver.Open(self.shape_countries)
-        self.layer = self.shapefile.GetLayer()
-
-    def lista_admin0(self):
-        numFeatures = self.layer.GetFeatureCount()
-        lista_stati = []
-        for featureNum in range(numFeatures):
-            feature = self.layer.GetFeature(featureNum)
-            nome_paese = feature.GetField(self.campo_nome_paese)
-            lista_stati.append(nome_paese)
-
-        seen = set()
-        seen_add = seen.add
-        lista_pulita = [x for x in lista_stati if not (x in seen or seen_add(x))]
-        lista_admin0 = sorted(lista_pulita)
-        return lista_admin0
-
-    def lista_admin2(self):
-
-        country_capitalized = self.paese.capitalize()
-        self.layer.SetAttributeFilter(self.campo_nome_paese + " = '" + country_capitalized + "'")
-
-        listone={}
-        lista_iso = []
-        lista_clean = []
-        lista_admin2 = []
-
-        for feature in self.layer:
-            cod_admin = feature.GetField(self.campo_iso_admin)
-            nome_zozzo = feature.GetField(self.campo_nome_admin)
-
-            unicode_zozzo = nome_zozzo.decode('utf-8')
-            nome_per_combo = unicodedata.normalize('NFKD', unicode_zozzo)
-
-            no_dash = re.sub('-', '_', nome_zozzo)
-            no_space = re.sub(' ', '', no_dash)
-            no_slash = re.sub('/', '_', no_space)
-            no_apice = re.sub('\'', '', no_slash)
-            no_bad_char = re.sub(r'-/\([^)]*\)', '', no_apice)
-            unicode_pulito = no_bad_char.decode('utf-8')
-            nome_pulito = unicodedata.normalize('NFKD', unicode_pulito).encode('ascii', 'ignore')
-
-            lista_iso.append(cod_admin)
-            lista_clean.append(nome_pulito)
-            lista_admin2.append(nome_per_combo)
-
-        for i in range(len(lista_iso)):
-            listone[lista_iso[i]] = {'name_orig': lista_admin2[i],'name_clean': lista_clean[i]}
-
-        return lista_admin2, listone
-
-    def creazione_struttura(self,admin_inviata):
-
-        os.chdir(self.proj_dir)
-        country_low = str(self.paese).lower()
-        if os.path.exists(country_low):
-            os.chdir(self.proj_dir + country_low)
-            admin_low = admin_inviata.lower()
-            if os.path.exists(admin_low):
-                pass
-            else:
-                os.mkdir(admin_low)
-        else:
-            os.chdir(self.proj_dir)
-            os.mkdir(country_low)
-            os.chdir(self.proj_dir + country_low)
-            admin_low = admin_inviata.lower()
-            if os.path.exists(admin_low):
-                pass
-            else:
-                os.mkdir(admin_low)
-
-        #return "Project created......\n"
-
 paese = "Togo"
-generazione_di_fenomeni = Recorsivo(paese)
+dbname = "geonode-imports"
+user = "postgres"
+password = "antarone"
+wfp_area = ''
+iso3 = ''
+nome_admin = ''
+code_admin = ''
+
+generazione_di_fenomeni = completeSparc.Progetto(wfp_area, iso3, paese, nome_admin, code_admin, dbname, user, password)
 lista_amministrazioni = generazione_di_fenomeni.lista_admin2()[1]
-for aministrazione in lista_amministrazioni.iteritems():
-    code_admin = aministrazione[0]
-    #nome_admin = aministrazione[1]['name_orig']
-    nome_admin = aministrazione[1]['name_clean']
-    print nome_admin
-    generazione_di_fenomeni.creazione_struttura(nome_admin)
-    newHazardAssessment = completeSparc.HazardAssessmentCountry(paese,nome_admin,code_admin)
-    newHazardAssessment.estrazione_poly_admin()
-    newHazardAssessment.conversione_vettore_raster_admin()
-    print newHazardAssessment.taglio_raster_popolazione()
-    esiste_flood = newHazardAssessment.taglio_raster_inondazione_aggregato()
-    if esiste_flood == "Flood":
-        print newHazardAssessment.calcolo_statistiche_zone_inondazione()
-    else:
-        pass
-    newMonthlyAssessment = completeSparc.MonthlyAssessmentCountry(paese,nome_admin,code_admin)
-    print newMonthlyAssessment.cut_monthly_rasters()
-    print newMonthlyAssessment.analisi_valori_da_normalizzare()
-    print newMonthlyAssessment.population_flood_prone_areas()
-    print newMonthlyAssessment.calcolo_finale()
+processo_controllo = 0
+
+def processo_dati():
+
+    # PROCESSO DATI
+    for aministrazione in lista_amministrazioni.iteritems():
+        code_admin = aministrazione[0]
+        nome_admin = aministrazione[1]['name_clean']
+
+        scrittura_db = completeSparc.ManagePostgresDB(wfp_area, iso3, paese, nome_admin, code_admin, dbname, user,
+                                                      password)
+        nome, iso2, iso3, wfp_area = scrittura_db.leggi_valori_amministrativi()
+
+        nome = str(nome).strip()
+        wfp_area = str(wfp_area).strip()
+        iso2 = iso2
+        iso3 = iso3
+
+        generazione_di_fenomeni.creazione_struttura(nome_admin)
+        newHazardAssessment = completeSparc.HazardAssessmentCountry(wfp_area, iso3, paese, nome_admin, code_admin,
+                                                                    dbname, user, password)
+        newHazardAssessment.estrazione_poly_admin()
+        newHazardAssessment.conversione_vettore_raster_admin()
+        newHazardAssessment.taglio_raster_popolazione()
+        esiste_flood = newHazardAssessment.taglio_raster_inondazione_aggregato()
+        if esiste_flood == "Flood":
+            newHazardAssessment.calcolo_statistiche_zone_inondazione()
+        else:
+            pass
+        newMonthlyAssessment = completeSparc.MonthlyAssessmentCountry(wfp_area, iso3, paese, nome_admin, code_admin,
+                                                                      dbname, user, password)
+        newMonthlyAssessment.cut_monthly_rasters()
+        newMonthlyAssessment.analisi_valori_da_normalizzare()
+        newMonthlyAssessment.population_flood_prone_areas()
+
+        file_controllo = generazione_di_fenomeni.dirOutPaese + "/" + str(paese) + ".txt"
+        # print file_controllo
+        if processo_controllo == 0:
+            if os.path.isfile(file_controllo):
+                print "ESISTE"
+                os.remove(file_controllo)
+        processo_controllo = 1
+        newMonthlyAssessment.calcolo_finale(file_controllo)
+
+#processo_dati()
+
+def scrittura_dati():
+
+    wfp_countries = 'sparc_wfp_countries'
+    wfp_areas = 'sparc_wfp_areas'
+    gaul_wfp_iso = 'sparc_gaul_wfp_iso' #THIS IS THE GIS TABLE CONTAINING ALL POLYGONS
+    population_rp = 'sparc_population_rp'
+    monthly_prec = 'sparc_monthly_precipitation'
+    monthly_prec_norm = 'sparc_monthly_precipitation_norm'
+    pop_month = 'sparc_population_month'
+    nome_admin = ''
+    code_admin = ''
+    lista_tabelle = [wfp_countries,wfp_areas,gaul_wfp_iso,population_rp,monthly_prec, monthly_prec_norm, pop_month]
+    scrittura_tabelle = completeSparc.ManagePostgresDB(wfp_area, iso3, paese, nome_admin, code_admin,
+                                                       dbname, user, password)
+    for tabella in lista_tabelle:
+        print tabella
+        if scrittura_tabelle.check_tabella(tabella)[0:1][0] == '42P01':
+            che_tabella = str(scrittura_tabelle.check_tabella(tabella)[1:][0])
+            print che_tabella
+    #         if che_tabella == 'sparc_population_rp':
+    #             scrittura_tabelle.create_sparc_population_rp('sparc_population_rp')
+    #             scrittura_tabelle.salva_cambi()
+    #         if che_tabella == 'sparc_monthly_precipitation':
+    #             scrittura_tabelle.create_sparc_monthly_precipitation('sparc_monthly_precipitation')
+    #             scrittura_tabelle.salva_cambi()
+    #         if che_tabella == 'sparc_monthly_precipitation_norm':
+    #             scrittura_tabelle.create_sparc_monthly_precipitation_norm('sparc_monthly_precipitation_norm')
+    #             scrittura_tabelle.salva_cambi()
+    #         if scrittura_tabelle == 'sparc_population_month':
+    #             scrittura_tabelle.create_sparc_population_month('sparc_population_month')
+    #             scrittura_tabelle.salva_cambi()
+    # scrittura_tabelle.close_connection()
+
+    # for aministrazione in lista_amministrazioni.iteritems():
+    #     code_admin = aministrazione[0]
+    #     nome_admin = aministrazione[1]['name_clean']
+    #     scrittura_db = completeSparc.ManagePostgresDB(wfp_area, iso3, paese, nome_admin, code_admin,
+    #                                                                   dbname, user, password)
+    #     scrittura_db.fetch_results()
+    #
+    #     scrittura_db.salva_cambi()
+    #     scrittura_db.close_connection()
+
+scrittura_dati()
