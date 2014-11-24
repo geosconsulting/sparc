@@ -55,7 +55,6 @@ def processo_dati():
         processo_controllo = 1
 
         newMonthlyAssessment.calcolo_finale(file_controllo)
-
 processo_dati()
 
 def scrittura_dati():

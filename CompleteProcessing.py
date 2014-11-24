@@ -309,7 +309,7 @@ class MonthlyAssessmentCountry(Progetto):
         valori_mensili = {}
         for raster_mese in lista_raster:
             mese_raster = arcpy.Raster(self.monthly_precipitation_dir + raster_mese)
-            mese_tagliato = arcpy.sa.ExtractByRectangle(mese_raster, admin_rast)
+            mese_tagliato = arcpy.sa.ExtractByRectangle(mese_raster, admin_rast,"OUTSIDE")
             nome = self.dirOut + self.admin + "_" + str(raster_mese)
             mese_tagliato.save(nome)
             valori_mensili[raster_mese] = mese_tagliato.mean

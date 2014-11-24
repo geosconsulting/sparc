@@ -5,6 +5,8 @@ import re
 import dbf
 import csv
 import os
+import psycopg2
+from psycopg2 import extras
 from geopy.geocoders import Nominatim
 from geopy.geocoders import GeoNames
 import shapefile
@@ -424,3 +426,32 @@ class GeocodingEmDat(object):
             print "Exception " + self.paese
             print e.args[0]
             arcpy.AddError(e.args[0])
+
+class ManagePostgresDB(object):
+
+    def __init__(self,paese,admin):
+       self.paese = paese
+       self.admin = admin
+       self.schema = 'public'
+       self.dbname = 'geonode-imports'
+       self.user = 'postgres'
+       self.password = 'antarone'
+
+    def leggi_valori_amministrativi(self):
+
+        conn = None
+        try:
+            connection_string = "dbname=%s user=%s password=%s" % (self.dbname, self.user, self.password)
+            conn = psycopg2.connect(connection_string)
+        except Exception as e:
+            print e.message
+
+        cursor = conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
+        comando = "SELECT c.name,c.iso2,c.iso3,a.area_name FROM SPARC_wfp_countries c INNER JOIN SPARC_wfp_areas a ON c.wfp_area = a.area_id WHERE c.name = '" + self.paese + "';"
+        #print comando
+        cursor.execute(comando)
+        row_count = 0
+        for row in cursor:
+            row_count += 1
+            return row[0], row[1], row[2], row[3]
+

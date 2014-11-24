@@ -1,4 +1,4 @@
-import SPARCFlood as SPRC
+from tests.superati import SPARCFlood as SPRC
 
 __author__ = 'fabio.lana'
 admin_area_name = "thane"

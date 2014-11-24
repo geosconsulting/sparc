@@ -50,7 +50,7 @@ class HazardAssessment(object):
         self.admin = admin
         self.dirOut = HazardAssessment.proj_dir + paese + "/" + admin + "/"
 
-        scrittura_risultati = us.ManagePostgresDB(paese,admin)
+        scrittura_risultati = us.ManagePostgresDB(paese, admin)
         nome, iso2, iso3, wfp_area = scrittura_risultati.leggi_valori_amministrativi()
 
         self.wfp_area = str(wfp_area).strip()
