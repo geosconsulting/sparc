@@ -6,6 +6,7 @@ import os
 from osgeo import ogr
 ogr.UseExceptions()
 import glob
+import dbf
 import csv
 import math
 import psycopg2
@@ -17,22 +18,22 @@ env.overwriteOutput = "true"
 
 class Progetto(object):
 
-    def __init__(self, wfp_area,iso3, paese, admin, code, dbname, user, password):
+    def __init__(self, paese, admin, code, dbname, user, password):
 
-        self.wfp_area = wfp_area
-        self.iso3 = iso3
         self.paese = paese
         self.admin = admin
         self.code = code
         self.proj_dir = "c:/data/tools/sparc/projects/"
         self.dirOutPaese = self.proj_dir + paese
         self.dirOut = self.proj_dir + paese + "/" + admin + "/"
-        driver = ogr.GetDriverByName("ESRI Shapefile")
+
         self.shape_countries = "c:/data/tools/sparc/input_data/gaul/gaul_wfp.shp"
         self.campo_nome_paese = "ADM0_NAME"
         self.campo_iso_paese = "ADM0_CODE"
         self.campo_nome_admin = "ADM2_NAME"
         self.campo_iso_admin = "ADM2_CODE"
+
+        driver = ogr.GetDriverByName("ESRI Shapefile")
         self.shapefile = driver.Open(self.shape_countries)
         self.layer = self.shapefile.GetLayer()
 
@@ -48,6 +49,12 @@ class Progetto(object):
             print e.message
 
         self.cur = self.conn.cursor()
+        #self.cur = self.conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
+        comando = "SELECT c.name,c.iso2,c.iso3,a.area_name FROM SPARC_wfp_countries c INNER JOIN SPARC_wfp_areas a ON c.wfp_area = a.area_id WHERE c.name = '" + self.paese + "';"
+        self.cur.execute(comando)
+        for row in self.cur:
+            self.wfp_area = str(row[3]).strip()
+            self.iso3 = row[2]
 
         self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif" #popmap10.tif"
         self.flood_aggregated = "C:/data/tools/sparc/input_data/flood/merged/" + self.paese + "_all_rp_rcl.tif"
@@ -72,7 +79,7 @@ class Progetto(object):
         country_capitalized = self.paese.capitalize()
         self.layer.SetAttributeFilter(self.campo_nome_paese + " = '" + country_capitalized + "'")
 
-        listone={}
+        listone = {}
         lista_iso = []
         lista_clean = []
         lista_admin2 = []
@@ -100,6 +107,18 @@ class Progetto(object):
             listone[lista_iso[i]] = {'name_orig': lista_admin2[i],'name_clean': lista_clean[i]}
 
         return lista_admin2, listone
+
+    def livelli_amministrativi_0_1(self,code_admin):
+
+        comando = "SELECT ADM0_CODE,ADM1_NAME,ADM1_code FROM sparc_gaul_wfp_iso WHERE adm2_code=" + str(code_admin) + ";"
+        #print comando
+        self.cur.execute(comando)
+        for row in self.cur:
+            Progetto.ADM0_GAUL_code = row[0]
+            Progetto.ADM1_GAUL_name = row[1]
+            Progetto.ADM1_GAUL_code = row[2]
+
+        #print self.ADM0_GAUL_code, self.ADM1_GAUL_code,self.ADM1_GAUL_name
 
     def creazione_struttura(self,admin_inviata):
 
@@ -319,8 +338,11 @@ class MonthlyAssessmentCountry(Progetto):
         global normalizzati
         normalizzati = {}
         for linea in dizionario_in.iteritems():
-            x_new = (linea[1] - minimo_valore)/(massimo_valore-minimo_valore)
-            normalizzati[linea[0]] = x_new
+            if minimo_valore==0 and massimo_valore==0:
+                pass
+            else:
+                x_new = (linea[1] - minimo_valore)/(massimo_valore-minimo_valore)
+                normalizzati[linea[0]] = x_new
 
         with open(self.dirOut + self.admin + "_prec_norm.csv", 'wb') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
@@ -441,12 +463,12 @@ class MonthlyAssessmentCountry(Progetto):
                     persone_pesi['1000'][peso_chiave-1] = persone
 
         textolio = open(file_controllo, "a")
-        textolio.write(str(self.paese) + "," + str(self.code) + "," + str(self.admin) + "," + "25" + "," + str(valori25).replace("[","").replace("]","") + "\n")
-        textolio.write(str(self.paese) + "," + str(self.code) + "," + str(self.admin) + "," + "50" + "," + str(valori50).replace("[","").replace("]","") + "\n")
-        textolio.write(str(self.paese) + "," + str(self.code) + "," + str(self.admin) + "," + "100" + "," + str(valori100).replace("[","").replace("]","") + "\n")
-        textolio.write(str(self.paese) + "," + str(self.code) + "," + str(self.admin) + "," + "200" + "," + str(valori200).replace("[","").replace("]","") + "\n")
-        textolio.write(str(self.paese) + "," + str(self.code) + "," + str(self.admin) + "," + "500" + "," + str(valori500).replace("[","").replace("]","") + "\n")
-        textolio.write(str(self.paese) + "," + str(self.code) + "," + str(self.admin) + "," + "1000" + "," + str(valori1000).replace("[","").replace("]","") + "\n")
+        textolio.write(str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name) + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "25" + "," + str(valori25).replace("[","").replace("]","") + "\n")
+        textolio.write(str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name) + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "50" + "," + str(valori50).replace("[","").replace("]","") + "\n")
+        textolio.write(str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name) + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "100" + "," + str(valori100).replace("[","").replace("]","") + "\n")
+        textolio.write(str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name) + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "200" + "," + str(valori200).replace("[","").replace("]","") + "\n")
+        textolio.write(str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name) + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "500" + "," + str(valori500).replace("[","").replace("]","") + "\n")
+        textolio.write(str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name) + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "1000" + "," + str(valori1000).replace("[","").replace("]","") + "\n")
         return "Monthly people divided.....\n"
 
 class ManagePostgresDB(Progetto):
@@ -460,7 +482,7 @@ class ManagePostgresDB(Progetto):
             print "PEOPLE AT RISK BY RETURN PERIOD " + self.admin
             print
             for linea in tabella_popolazione:
-                print "%s %s %s %s %.2f" % (self.paese,self.admin,self.admin_code,linea[0], math.ceil(float(linea[7]/1000.0)))
+                print "%s %s %s %s %.2f" % (self.paese, self.admin, self.admin_code, linea[0], math.ceil(float(linea[7]/1000.0)))
         except:
             pass
 
@@ -516,7 +538,7 @@ class ManagePostgresDB(Progetto):
         row_count = 0
         for row in cursor:
             row_count += 1
-            return (row[0], row[1],row[2],row[3])
+            return row[0], row[1], row[2], row[3]
 
     def cancella_tabella(self):
 

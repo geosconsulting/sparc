@@ -6,7 +6,7 @@ ogr.UseExceptions()
 
 import CompleteProcessing as completeSparc
 
-paese = "Togo"
+paese = "Benin"
 dbname = "geonode-imports"
 user = "postgres"
 password = "antarone"
@@ -15,28 +15,22 @@ iso3 = ''
 nome_admin = ''
 code_admin = ''
 
-generazione_di_fenomeni = completeSparc.Progetto(wfp_area, iso3, paese, nome_admin, code_admin, dbname, user, password)
+generazione_di_fenomeni = completeSparc.Progetto(paese, nome_admin, code_admin, dbname, user, password)
 lista_amministrazioni = generazione_di_fenomeni.lista_admin2()[1]
-processo_controllo = 0
 
 def processo_dati():
 
+    processo_controllo = 0
     # PROCESSO DATI
     for aministrazione in lista_amministrazioni.iteritems():
+
         code_admin = aministrazione[0]
         nome_admin = aministrazione[1]['name_clean']
 
-        scrittura_db = completeSparc.ManagePostgresDB(wfp_area, iso3, paese, nome_admin, code_admin, dbname, user,
-                                                      password)
-        nome, iso2, iso3, wfp_area = scrittura_db.leggi_valori_amministrativi()
-
-        nome = str(nome).strip()
-        wfp_area = str(wfp_area).strip()
-        iso2 = iso2
-        iso3 = iso3
+        generazione_di_fenomeni.livelli_amministrativi_0_1(code_admin)
 
         generazione_di_fenomeni.creazione_struttura(nome_admin)
-        newHazardAssessment = completeSparc.HazardAssessmentCountry(wfp_area, iso3, paese, nome_admin, code_admin,
+        newHazardAssessment = completeSparc.HazardAssessmentCountry(paese, nome_admin, code_admin,
                                                                     dbname, user, password)
         newHazardAssessment.estrazione_poly_admin()
         newHazardAssessment.conversione_vettore_raster_admin()
@@ -46,22 +40,23 @@ def processo_dati():
             newHazardAssessment.calcolo_statistiche_zone_inondazione()
         else:
             pass
-        newMonthlyAssessment = completeSparc.MonthlyAssessmentCountry(wfp_area, iso3, paese, nome_admin, code_admin,
+        newMonthlyAssessment = completeSparc.MonthlyAssessmentCountry(paese, nome_admin, code_admin,
                                                                       dbname, user, password)
         newMonthlyAssessment.cut_monthly_rasters()
         newMonthlyAssessment.analisi_valori_da_normalizzare()
         newMonthlyAssessment.population_flood_prone_areas()
 
         file_controllo = generazione_di_fenomeni.dirOutPaese + "/" + str(paese) + ".txt"
-        # print file_controllo
+
         if processo_controllo == 0:
             if os.path.isfile(file_controllo):
                 print "ESISTE"
                 os.remove(file_controllo)
         processo_controllo = 1
+
         newMonthlyAssessment.calcolo_finale(file_controllo)
 
-#processo_dati()
+processo_dati()
 
 def scrittura_dati():
 
@@ -78,23 +73,22 @@ def scrittura_dati():
     scrittura_tabelle = completeSparc.ManagePostgresDB(wfp_area, iso3, paese, nome_admin, code_admin,
                                                        dbname, user, password)
     for tabella in lista_tabelle:
-        print tabella
         if scrittura_tabelle.check_tabella(tabella)[0:1][0] == '42P01':
             che_tabella = str(scrittura_tabelle.check_tabella(tabella)[1:][0])
             print che_tabella
-    #         if che_tabella == 'sparc_population_rp':
-    #             scrittura_tabelle.create_sparc_population_rp('sparc_population_rp')
-    #             scrittura_tabelle.salva_cambi()
-    #         if che_tabella == 'sparc_monthly_precipitation':
-    #             scrittura_tabelle.create_sparc_monthly_precipitation('sparc_monthly_precipitation')
-    #             scrittura_tabelle.salva_cambi()
-    #         if che_tabella == 'sparc_monthly_precipitation_norm':
-    #             scrittura_tabelle.create_sparc_monthly_precipitation_norm('sparc_monthly_precipitation_norm')
-    #             scrittura_tabelle.salva_cambi()
-    #         if scrittura_tabelle == 'sparc_population_month':
-    #             scrittura_tabelle.create_sparc_population_month('sparc_population_month')
-    #             scrittura_tabelle.salva_cambi()
-    # scrittura_tabelle.close_connection()
+            if che_tabella == 'sparc_population_rp':
+                scrittura_tabelle.create_sparc_population_rp(che_tabella)
+                scrittura_tabelle.salva_cambi()
+            if che_tabella == 'sparc_monthly_precipitation':
+                scrittura_tabelle.create_sparc_monthly_precipitation(che_tabella)
+                scrittura_tabelle.salva_cambi()
+            if che_tabella == 'sparc_monthly_precipitation_norm':
+                scrittura_tabelle.create_sparc_monthly_precipitation_norm(che_tabella)
+                scrittura_tabelle.salva_cambi()
+            if che_tabella == 'sparc_population_month':
+                scrittura_tabelle.create_sparc_population_month(che_tabella)
+                scrittura_tabelle.salva_cambi()
+    scrittura_tabelle.close_connection()
 
     # for aministrazione in lista_amministrazioni.iteritems():
     #     code_admin = aministrazione[0]
@@ -105,5 +99,4 @@ def scrittura_dati():
     #
     #     scrittura_db.salva_cambi()
     #     scrittura_db.close_connection()
-
-scrittura_dati()
+#scrittura_dati()

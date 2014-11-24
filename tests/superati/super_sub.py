@@ -9,7 +9,6 @@ class ParentClass(object):
     def test(self):
         print 'Im in parent class'
 
-
 class ChildClass(ParentClass):
 
    def test(self):
@@ -17,5 +16,21 @@ class ChildClass(ParentClass):
         print "Value of x = " + str(self.x)
         print self.pippo
 
-x = ChildClass("'Come t'antitoli")
+x = ChildClass("Come t'antitoli")
 x.test()
+
+from encapsulation import Account
+print Account.number
+
+x = Account("Fabio",1221, 253)
+#print x.public
+#print x._protected
+print Account.number
+
+y = Account("Patty", 12121, 50)
+print Account.number
+
+print y.account_holder
+
+del y
+print Account.number
