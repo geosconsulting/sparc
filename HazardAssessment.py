@@ -10,6 +10,7 @@ import scipy.interpolate
 import scipy.optimize
 from scipy.interpolate import interp1d
 import os
+import sys
 import arcpy
 arcpy.CheckOutExtension("spatial")
 from arcpy import env
@@ -22,25 +23,8 @@ class HazardAssessment(object):
 
     proj_dir = os.getcwd() + "/projects/"
 
-    shape_countries = os.getcwd() + "/input_data/gaul/gaul_wfp.shp"
-    #pop_distr = os.getcwd() + "/input_data/population/popmap10.tif"
-    #flood_aggregated = os.getcwd() + "/input_data/flood/rp_aggregat.tif"
+    shape_countries = os.getcwd() + "/input_data/gaul/gaul_wfp_iso.shp"
     historical_accidents = os.getcwd() + "/input_data/historical_data/floods.csv"
-
-    # flood_rp25 = os.getcwd() + "/input_data/flood/gar15/h25m.tif"
-    # flood_rp50 = os.getcwd() + "/input_data/flood/gar15/h50m.tif"
-    # flood_rp100 = os.getcwd() + "/input_data/flood/gar15/h100m.tif"
-    # flood_rp200 = os.getcwd() + "/input_data/flood/gar15/h200m.tif"
-    # flood_rp500 = os.getcwd() + "/input_data/flood/gar15/h500m.tif"
-    # flood_rp1000 = os.getcwd() + "/input_data/flood/gar15/h1000m.tif"
-
-    # flood_extents = []
-    # flood_extents.append(flood_rp25)
-    # flood_extents.append(flood_rp50)
-    # flood_extents.append(flood_rp100)
-    # flood_extents.append(flood_rp200)
-    # flood_extents.append(flood_rp500)
-    # flood_extents.append(flood_rp1000)
 
     def __init__(self, paese, admin):
 
@@ -50,13 +34,21 @@ class HazardAssessment(object):
         self.admin = admin
         self.dirOut = HazardAssessment.proj_dir + paese + "/" + admin + "/"
 
-        scrittura_risultati = us.ManagePostgresDB(paese, admin)
+        scrittura_risultati = us.ConnectionPostgresDB(paese, admin)
         nome, iso2, iso3, wfp_area = scrittura_risultati.leggi_valori_amministrativi()
 
         self.wfp_area = str(wfp_area).strip()
         self.iso3 = iso3
         print "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif"
-        self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif"
+
+        #self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif"
+        if os.path.isfile("C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif"):
+            self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif"
+        else:
+            self.population_raster = "None"
+            print "Population raster not yet released at http://www.worldpop.org.uk/...."
+            sys.exit()
+
         #self.flood_aggregated = os.getcwd() + "/input_data/flood/rp_aggregat.tif"
         self.flood_aggregated = "C:/data/tools/sparc/input_data/flood/merged/" + self.paese + "_all_rp_rcl.tif"
         self.historical_accidents = "C:/data/tools/sparc/input_data/historical_data/floods.csv"
@@ -75,6 +67,13 @@ class HazardAssessment(object):
         self.flood_extents.append(self.flood_rp200)
         self.flood_extents.append(self.flood_rp500)
         self.flood_extents.append(self.flood_rp1000)
+
+        if os.path.isfile("C:/data/tools/sparc/input_data/geocoded/risk_map/" + self.paese + ".tif"):
+            self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif" #popmap10.tif"
+        else:
+            self.population_raster = "None"
+            print "Risk raster not available...."
+            #sys.exit()
 
     def estrazione_poly_admin(self):
 
@@ -159,11 +158,19 @@ class HazardAssessment(object):
 
     def taglio_raster_popolazione(self):
 
-        #CUT and SAVE Population within the admin2 area
-        lscan_out_rst = arcpy.Raster(self.population_raster) * arcpy.Raster(admin_rast)
-        lscan_out = self.dirOut + self.admin + "_pop.tif"
-        lscan_out_rst.save(lscan_out)
-        return "Population clipped....\n"
+        # #CUT and SAVE Population within the admin2 area
+        # lscan_out_rst = arcpy.Raster(self.population_raster) * arcpy.Raster(admin_rast)
+        # lscan_out = self.dirOut + self.admin + "_pop.tif"
+        # lscan_out_rst.save(lscan_out)
+        # return "Population clipped....\n"
+        if self.population_raster!= "None":
+            lscan_out_rst = arcpy.Raster(self.population_raster) * arcpy.Raster(admin_rast)
+            lscan_out = self.dirOut + self.admin + "_pop.tif"
+            lscan_out_rst.save(lscan_out)
+            return "sipop"
+        else:
+            return "nopop"
+
 
     def taglio_raster_inondazione_aggregato(self):
 

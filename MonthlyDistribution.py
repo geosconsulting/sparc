@@ -90,6 +90,39 @@ class MonthlyDistribution(object):
 
         return "Monthly Probability Function calculated....\n"
 
+    def valore_precipitation_centroid(self):
+
+        file_amministrativo = self.dirOut + self.admin + ".shp"
+        file_centroide = self.dirOut + self.admin + "_ctrd.shp"
+        #print file_centroide
+        adm2_centroid = arcpy.FeatureToPoint_management(file_amministrativo,file_centroide, "CENTROID")
+        coords = arcpy.da.SearchCursor(adm2_centroid,["SHAPE@XY"])
+        for polyg in coords:
+            x,y = polyg[0]
+
+        os.chdir(self.monthly_precipitation_dir)
+        lista_raster = glob.glob("*.tif")
+
+        valori_mensili = {}
+        for raster_mese in lista_raster:
+            result = arcpy.GetCellValue_management(raster_mese, str(x) + " " + str(y))
+            valori_mensili[raster_mese] = int(result[0])
+
+        #print valori_mensili
+
+        global dizionario_in
+        dizionario_in = self.build_value_list(valori_mensili)
+        with open(self.dirOut + self.admin + "_prec.csv", 'wb') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            for linea in dizionario_in.iteritems():
+                csvwriter.writerow(linea)
+
+        #print dizionario_in
+        #global ritornati_somma
+        #ritornati_somma = sum(dizionario_in.values())
+
+        return "Monthly Probability Function calculated....\n"
+
     def analisi_valori_da_normalizzare(self):
 
         mese_di_minimo_valore = min(dizionario_in, key = dizionario_in.get)
@@ -102,11 +135,11 @@ class MonthlyDistribution(object):
         global normalizzati
         normalizzati = {}
         for linea in dizionario_in.iteritems():
-            x_new = (linea[1] - minimo_valore)/(massimo_valore-minimo_valore)
+            x_new = (linea[1] - float(minimo_valore))/(float(massimo_valore)-float(minimo_valore))
             normalizzati[linea[0]] = x_new
 
         with open(self.dirOut + self.admin + "_prec_norm.csv", 'wb') as csvfile:
-            csvwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            csvwriter = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             for linea in normalizzati.iteritems():
                   csvwriter.writerow(linea)
 
@@ -203,28 +236,44 @@ class MonthlyDistribution(object):
         persone_pesi['500'] = {}
         persone_pesi['1000'] = {}
 
+        valori25 = []
+        valori50 = []
+        valori100 = []
+        valori200 = []
+        valori500 = []
+        valori1000 = []
+
         iteratore = 0
+        ildizio_chiavi = population_in_flood_prone_areas.keys()
+        irps = [25, 50, 100, 200, 500, 1000]
+        for chiave in irps:
+            if chiave in ildizio_chiavi:
+                pass
+            else:
+                population_in_flood_prone_areas[chiave] = 0
+
         for persone_chiave, persone_valore in sorted(population_in_flood_prone_areas.iteritems()):
             iteratore += 1
             for peso_chiave, peso_valore in normalizzati.iteritems():
                 persone = persone_valore * peso_valore
-                if iteratore == 1:
-                    persone_pesi['25'][peso_chiave] = persone
-                elif iteratore == 2:
+                if persone_chiave == 25:
+                    valori25.append(int(persone))
+                    persone_pesi['25'][peso_chiave] = int(persone)
+                elif persone_chiave == 50:
+                    valori50.append(int(persone))
                     persone_pesi['50'][peso_chiave] = persone
-                elif iteratore == 3:
+                elif persone_chiave == 100:
+                    valori100.append(int(persone))
                     persone_pesi['100'][peso_chiave] = persone
-                elif iteratore == 4:
+                elif persone_chiave == 200:
+                    valori200.append(int(persone))
                     persone_pesi['200'][peso_chiave] = persone
-                elif iteratore == 5:
-                    #persone_pesi['500'][peso_chiave] = format(persone, '.0f')
-                    for indice in range(1, 13):
-                        persone_pesi['500'][indice] = 0
-                    iteratore = 6
-                elif iteratore == 6:
+                elif persone_chiave == 500:
+                    valori500.append(int(persone))
+                    persone_pesi['500'][peso_chiave] = persone
+                elif persone_chiave == 1000:
+                    valori1000.append(int(persone))
                     persone_pesi['1000'][peso_chiave-1] = persone
-                    persone_pesi['1000'][peso_chiave] = 0.0
-
 
         return "Monthly people divided.....\n"
 
@@ -237,6 +286,8 @@ class MonthlyDistribution(object):
         for cada in persone_pesi.itervalues():
             myRoundedList = [round(elem, 2) for elem in cada.values()]
             people_affected_rp.append(myRoundedList)
+
+        print people_affected_rp
 
         matrice = np.asarray(people_affected_rp)
         maximo_y = math.ceil(max(matrice.sum(0))/500)*500

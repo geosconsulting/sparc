@@ -13,7 +13,7 @@ class AppSPARC:
 
     def __init__(self, master):
 
-        frame = Frame(master, height=32, width=975)
+        frame = Frame(master, height=32, width=1000)
         frame.pack_propagate(0)
         frame.pack()
 
@@ -25,36 +25,27 @@ class AppSPARC:
         self.box_adm0.current(36)
         self.box_adm0.pack(side=LEFT)
 
-        self.emdat = Button(frame, text="EM-DAT Data", command=self.emdat)
+        self.emdat = Button(frame, text="EM-DAT Data",  fg="red",command=self.emdat)
         self.emdat.pack(side=LEFT)
-
-        self.sub_select = Button(frame, text="Fetch Admin", command=self.sub_select)
-        self.sub_select.pack(side=LEFT)
-
+        self.button = Button(frame, text="National Assessment", fg="red", command=self.national_calc).pack(side=LEFT)
         self.box_value_adm2 = StringVar()
         self.box_adm2 = ttk.Combobox(frame, textvariable = self.box_value_adm2)
         self.box_adm2['values'] = ' '
         self.box_adm2.pack(side=LEFT)
 
-        self.create_structure = Button(frame,text="Create Project", command = self.create_project)
+        self.sub_select = Button(frame, text="Fetch Admin", fg="blue",command=self.sub_select)
+        self.sub_select.pack(side=LEFT)
+        self.create_structure = Button(frame,text="Create Project",fg="blue", command = self.create_project)
         self.create_structure.pack(side=LEFT)
-
-        self.button = Button(frame, text="Annual Hazard", fg="red", command=self.hazard_assessment).pack(side=LEFT)
-        self.button = Button(frame, text="Monthly Probability", fg="red", command=self.monthly_distribution).pack(side=LEFT)
-        self.button = Button(frame, text="Vulnerability", fg="red", command=frame.quit).pack(side=LEFT)
-        self.button = Button(frame, text="Risk Assessment", fg="red", command=frame.quit).pack(side=LEFT)
+        self.button = Button(frame, text="Annual Hazard", fg="blue", command=self.hazard_assessment).pack(side=LEFT)
+        self.button = Button(frame, text="Monthly Probability", fg="blue", command=self.monthly_distribution).pack(side=LEFT)
+        self.button = Button(frame, text="Vulnerability", fg="blue", command=frame.quit).pack(side=LEFT)
         self.button = Button(frame, text="Next Step", fg="blue", command=frame.quit).pack(side=LEFT)
 
         root = Tk()
         root.title("SPARC Console")
         self.area_messaggi = Text(root, height=15, width=60, background="black", foreground="green")
         self.area_messaggi.pack()
-
-        #menubar = Menu(root)
-        #menubar.add_command(label="Quit!", command=root.quit)
-
-        # display the menu
-        #root.config(menu=menubar)
 
     def sub_select(self):
 
@@ -102,7 +93,11 @@ class AppSPARC:
         newHazardAssessment = ha.HazardAssessment(paese, admin_global)
         self.area_messaggi.insert(INSERT, newHazardAssessment.estrazione_poly_admin())
         self.area_messaggi.insert(INSERT, newHazardAssessment.conversione_vettore_raster_admin())
-        self.area_messaggi.insert(INSERT, newHazardAssessment.taglio_raster_popolazione())
+        if newHazardAssessment.taglio_raster_popolazione()== "sipop":
+            self.area_messaggi.insert(INSERT, "Population clipped....")
+        elif newHazardAssessment.taglio_raster_popolazione()== "nopop":
+            self.area_messaggi.insert(INSERT, "Population raster not yet released....")
+            sys.exit()
         self.area_messaggi.insert(INSERT, newHazardAssessment.taglio_raster_inondazione_aggregato())
         self.area_messaggi.insert(INSERT, newHazardAssessment.taglio_raster_inondazione())
         self.area_messaggi.insert(INSERT, newHazardAssessment.calcolo_statistiche_zone_indondazione())
@@ -119,13 +114,22 @@ class AppSPARC:
 
         global newMontlhyDistribution
         newMontlhyDistribution = monDist.MonthlyDistribution(paese,admin_global)
-        self.area_messaggi.insert(INSERT,newMontlhyDistribution.cut_monthly_rasters())
+        #self.area_messaggi.insert(INSERT,newMontlhyDistribution.cut_monthly_rasters())
+        self.area_messaggi.insert(INSERT,newMontlhyDistribution.valore_precipitation_centroid())
         self.area_messaggi.insert(INSERT,newMontlhyDistribution.analisi_valori_da_normalizzare())
         self.area_messaggi.insert(INSERT,newMontlhyDistribution.historical_analysis_damages())
         newMontlhyDistribution.plot_monthly_danni()
         self.area_messaggi.insert(INSERT,newMontlhyDistribution.population_flood_prone_areas())
         self.area_messaggi.insert(INSERT, newMontlhyDistribution.calcolo_finale())
         newMontlhyDistribution.plottalo_bello()
+
+    def national_calc(self):
+
+        paese = self.box_value_adm0.get()
+
+        import CountryCalculations
+        CountryCalculations.processo_dati(paese)
+        CountryCalculations.scrittura_dati(paese)
 
 root = Tk()
 root.title("SPARC Flood Assessment")

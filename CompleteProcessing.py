@@ -6,9 +6,7 @@ import os
 from osgeo import ogr
 ogr.UseExceptions()
 import glob
-import dbf
 import csv
-import math
 import psycopg2
 import psycopg2.extras
 import arcpy
@@ -27,7 +25,7 @@ class Progetto(object):
         self.dirOutPaese = self.proj_dir + paese
         self.dirOut = self.proj_dir + paese + "/" + admin + "/"
 
-        self.shape_countries = "c:/data/tools/sparc/input_data/gaul/gaul_wfp.shp"
+        self.shape_countries = "c:/data/tools/sparc/input_data/gaul/gaul_wfp_iso.shp"
         self.campo_nome_paese = "ADM0_NAME"
         self.campo_iso_paese = "ADM0_CODE"
         self.campo_nome_admin = "ADM2_NAME"
@@ -56,9 +54,22 @@ class Progetto(object):
             self.wfp_area = str(row[3]).strip()
             self.iso3 = row[2]
 
-        self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif" #popmap10.tif"
+        #self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif" #popmap10.tif"
+        if os.path.isfile("C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif"):
+            self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif" #popmap10.tif"
+        else:
+            self.population_raster = "None"
+
         self.flood_aggregated = "C:/data/tools/sparc/input_data/flood/merged/" + self.paese + "_all_rp_rcl.tif"
         self.historical_accidents = "C:/data/tools/sparc/input_data/historical_data/floods.csv"
+
+        if os.path.isfile("C:/data/tools/sparc/input_data/geocoded/risk_map/" + self.paese + ".tif"):
+            self.risk_raster = "C:/data/tools/sparc/input_data/geocoded/risk_map/" + self.paese + ".tif"
+        else:
+            self.risk_raster = "None"
+            print "Risk raster not available...."
+
+        self.reliability_value = ""
 
     def lista_admin0(self):
         numFeatures = self.layer.GetFeatureCount()
@@ -130,7 +141,7 @@ class Progetto(object):
             if os.path.exists(admin_low):
                 pass
             else:
-                os.mkdir(admin_low)
+                os.mkdir(admin_low.replace("\n", ""))
         else:
             os.chdir(self.proj_dir)
             os.mkdir(country_low)
@@ -139,14 +150,14 @@ class Progetto(object):
             if os.path.exists(admin_low):
                 pass
             else:
-                os.mkdir(admin_low)
+                os.mkdir(admin_low.replace("\n", ""))
 
         #return "Project created......\n"
 
 class HazardAssessmentCountry(Progetto):
 
-    proj_dir = os.getcwd() + "/projects/"
-    shape_countries = os.getcwd() + "/input_data/gaul/gaul_wfp.shp"
+    #proj_dir = os.getcwd() + "/projects/"
+    #shape_countries = os.getcwd() + "/input_data/gaul/gaul_wfp_iso.shp"
 
     def estrazione_poly_admin(self):
 
@@ -174,8 +185,8 @@ class HazardAssessmentCountry(Progetto):
 
         # Create the output shapefile
         outDataSource = outDriver.CreateDataSource(outShapefile)
-        out_lyr_name = os.path.splitext(os.path.split(outShapefile)[1])[0]
-        out_layer = outDataSource.CreateLayer(str(out_lyr_name),inLayerProj, geom_type=ogr.wkbMultiPolygon)
+        out_lyr_name = (os.path.splitext(os.path.split(outShapefile)[1])[0]).replace("\n","")
+        out_layer = outDataSource.CreateLayer(str(out_lyr_name), inLayerProj, geom_type=ogr.wkbMultiPolygon)
 
         # Add input Layer Fields to the output Layer if it is the one we want
         inLayerDefn = inLayer.GetLayerDefn()
@@ -234,10 +245,13 @@ class HazardAssessmentCountry(Progetto):
     def taglio_raster_popolazione(self):
 
         #CUT and SAVE Population within the admin2 area
-        lscan_out_rst = arcpy.Raster(self.population_raster) * arcpy.Raster(admin_rast)
-        lscan_out = self.dirOut + self.admin + "_pop.tif"
-        lscan_out_rst.save(lscan_out)
-        return "Population clipped...."
+        if self.population_raster!= "None":
+            lscan_out_rst = arcpy.Raster(self.population_raster) * arcpy.Raster(admin_rast)
+            lscan_out = self.dirOut + self.admin + "_pop.tif"
+            lscan_out_rst.save(lscan_out)
+            return "sipop"
+        else:
+            return "nopop"
 
     def taglio_raster_inondazione_aggregato(self):
 
@@ -299,17 +313,18 @@ class MonthlyAssessmentCountry(Progetto):
                 la_lista_finale[k] = 0
         return la_lista_finale
 
-    def cut_monthly_rasters(self):
+    #ELIMINATO PERCHE FA MOLTO CASINO NEI TAGLI E NEI VALORI RESTITUITI
+    # RIMPIAZZATO DAL CALCOLO DEL VALORE SUL CENTROIDE DEL POLIGONO
+    def cut_monthly_precipitation_rasters(self):
 
         os.chdir(self.monthly_precipitation_dir)
         lista_raster = glob.glob("*.tif")
         admin_rast = self.dirOut + self.admin + "_rst.tif"
-        #print admin_rast
 
         valori_mensili = {}
         for raster_mese in lista_raster:
             mese_raster = arcpy.Raster(self.monthly_precipitation_dir + raster_mese)
-            mese_tagliato = arcpy.sa.ExtractByRectangle(mese_raster, admin_rast,"OUTSIDE")
+            mese_tagliato = arcpy.sa.ExtractByRectangle(mese_raster, admin_rast)
             nome = self.dirOut + self.admin + "_" + str(raster_mese)
             mese_tagliato.save(nome)
             valori_mensili[raster_mese] = mese_tagliato.mean
@@ -326,12 +341,53 @@ class MonthlyAssessmentCountry(Progetto):
 
         return "Monthly Probability Function calculated....\n"
 
+    def valore_precipitation_reliability_centroid(self):
+
+        file_amministrativo = self.dirOut + self.admin + ".shp"
+        file_centroide = self.dirOut + self.admin + "_ctrd.shp"
+        #print file_centroide
+        adm2_centroid = arcpy.FeatureToPoint_management(file_amministrativo,file_centroide, "CENTROID")
+        coords = arcpy.da.SearchCursor(adm2_centroid,["SHAPE@XY"])
+        global x
+        global y
+        for polyg in coords:
+            x, y = polyg[0]
+
+        os.chdir(self.monthly_precipitation_dir)
+        lista_raster = glob.glob("*.tif")
+
+        valore = arcpy.GetCellValue_management(self.risk_raster, str(x) + " " + str(y))[0]
+        if valore == "NoData":
+            self.reliability_value = 0.0
+        else:
+            self.reliability_value = valore
+        print self.reliability_value
+
+        valori_mensili = {}
+        for raster_mese in lista_raster:
+            result = arcpy.GetCellValue_management(raster_mese, str(x) + " " + str(y))
+            if result[0] == "NoData":
+                valori_mensili[raster_mese] = 0.0
+            else:
+                valori_mensili[raster_mese] = int(result[0])
+
+        global dizionario_in
+        dizionario_in = self.build_value_list(valori_mensili)
+        with open(self.dirOut + self.admin + "_prec.csv", 'wb') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            for linea in dizionario_in.iteritems():
+                csvwriter.writerow(linea)
+
+        return "Monthly Probability Function calculated....\n"
+
     def analisi_valori_da_normalizzare(self):
 
         mese_di_minimo_valore = min(dizionario_in, key = dizionario_in.get)
         minimo_valore = dizionario_in[mese_di_minimo_valore]
         mese_di_massimo_valore = max(dizionario_in, key = dizionario_in.get)
         massimo_valore = dizionario_in[mese_di_massimo_valore]
+
+        #print self.admin,minimo_valore,massimo_valore
 
         #NORMALIZZAZIONE FATTA A MANO CALCOLANDO TUTTO
         #LO USO PERCHE ALTRIMENTI SI INCASINA LA GENERAZIONE DEI PLOTS
@@ -341,11 +397,13 @@ class MonthlyAssessmentCountry(Progetto):
             if minimo_valore==0 and massimo_valore==0:
                 pass
             else:
-                x_new = (linea[1] - minimo_valore)/(massimo_valore-minimo_valore)
+                #print linea
+                x_new = (linea[1] - float(minimo_valore))/(float(massimo_valore)-float(minimo_valore))
+                #print x_new
                 normalizzati[linea[0]] = x_new
 
         with open(self.dirOut + self.admin + "_prec_norm.csv", 'wb') as csvfile:
-            csvwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            csvwriter = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             for linea in normalizzati.iteritems():
                   csvwriter.writerow(linea)
 
@@ -422,7 +480,6 @@ class MonthlyAssessmentCountry(Progetto):
         persone_pesi['500'] = {}
         persone_pesi['1000'] = {}
 
-        iteratore = 0
         valori25 = []
         valori50 = []
         valori100 = []
@@ -430,7 +487,7 @@ class MonthlyAssessmentCountry(Progetto):
         valori500 = []
         valori1000 = []
 
-        #print population_in_flood_prone_areas
+        iteratore = 0
         ildizio_chiavi = population_in_flood_prone_areas.keys()
         irps = [25, 50, 100, 200, 500, 1000]
         for chiave in irps:
@@ -463,71 +520,44 @@ class MonthlyAssessmentCountry(Progetto):
                     persone_pesi['1000'][peso_chiave-1] = persone
 
         textolio = open(file_controllo, "a")
-        textolio.write(str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name) + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "25" + "," + str(valori25).replace("[","").replace("]","") + "\n")
-        textolio.write(str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name) + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "50" + "," + str(valori50).replace("[","").replace("]","") + "\n")
-        textolio.write(str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name) + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "100" + "," + str(valori100).replace("[","").replace("]","") + "\n")
-        textolio.write(str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name) + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "200" + "," + str(valori200).replace("[","").replace("]","") + "\n")
-        textolio.write(str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name) + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "500" + "," + str(valori500).replace("[","").replace("]","") + "\n")
-        textolio.write(str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name) + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "1000" + "," + str(valori1000).replace("[","").replace("]","") + "\n")
+        textolio.write(str(self.iso3) + "," + str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name).replace("'", "") + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "25" + "," + str(valori25).replace("[","").replace("]","") + "," + str(self.reliability_value) + "\n")
+        textolio.write(str(self.iso3) + "," + str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name).replace("'", "") + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "50" + "," + str(valori50).replace("[","").replace("]","") + "," + str(self.reliability_value) + "\n")
+        textolio.write(str(self.iso3) + "," + str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name).replace("'", "") + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "100" + "," + str(valori100).replace("[","").replace("]","") + "," + str(self.reliability_value) + "\n")
+        textolio.write(str(self.iso3) + "," + str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name).replace("'", "") + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "200" + "," + str(valori200).replace("[","").replace("]","") + "," + str(self.reliability_value) + "\n")
+        textolio.write(str(self.iso3) + "," + str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name).replace("'", "") + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "500" + "," + str(valori500).replace("[","").replace("]","") + "," + str(self.reliability_value) + "\n")
+        textolio.write(str(self.iso3) + "," + str(self.paese) + "," + str(self.ADM0_GAUL_code) + "," + str(self.ADM1_GAUL_name).replace("'", "") + "," + str(self.ADM1_GAUL_code) + "," + str(self.code) + "," + str(self.admin) + "," + "1000" + "," + str(valori1000).replace("[","").replace("]","") + "," + str(self.reliability_value) + "\n")
         return "Monthly people divided.....\n"
 
 class ManagePostgresDB(Progetto):
 
-    def fetch_results(self):
+    def check_tabella(self):
 
-        try:
-            tabella_popolazione = dbf.Table(self.dirOut + self.admin + "_pop_stat.dbf")
-            tabella_popolazione.open()
-            print
-            print "PEOPLE AT RISK BY RETURN PERIOD " + self.admin
-            print
-            for linea in tabella_popolazione:
-                print "%s %s %s %s %.2f" % (self.paese, self.admin, self.admin_code, linea[0], math.ceil(float(linea[7]/1000.0)))
-        except:
-            pass
-
-        with open(self.dirOut + self.admin + "_prec.csv", 'rb') as csvfile_prec:
-            prec_reader = csv.reader(csvfile_prec, delimiter=' ', quotechar='|')
-            print
-            print "MM OF RAIN FOR ADMIN 2 " + self.admin
-            print
-            for row in prec_reader:
-                print "%s %s %s %s %.2f" % (self.paese, self.admin, self.code, row[0], math.ceil(float(row[1])/ 1000.0))
-
-        with open(self.dirOut + self.admin + "_prec_norm.csv", 'rb') as csvfile_prec_norm:
-            prec_reader_norm = csv.reader(csvfile_prec_norm, delimiter=' ', quotechar='|')
-            print
-            print "NORMALIZED VALUES FOR RAIN FOR ADMIN 2 " + self.admin
-            print
-            for row in prec_reader_norm:
-                print "%s %s %s %s %.2f" % (self.paese, self.admin, self.code, row[0], math.ceil(float(row[1])/ 1000.0))
-                #pass
-
-        with open(self.proj_dir + self.paese + "/" + self.paese + ".txt", 'rb') as csvfile_pop_month:
-            pop_monthly_reader = csv.reader(csvfile_pop_month, delimiter=',', quotechar='"')
-            for row in pop_monthly_reader:
-                print row
-                #print "%s %s %s %d" % (row[0],row[2],row[1],int(row[3]))
-
-    def check_tabella(self, tab_check):
-
-        esiste_tabella = "SELECT '"+ self.schema + "." + tab_check + "'::regclass"
-
+        esiste_tabella = "SELECT '"+ self.schema + ".sparc_population_month'::regclass"
         connection_string = "dbname=%s user=%s password=%s" % (self.dbname, self.user,self.password)
         conn_check = psycopg2.connect(connection_string)
         cur_check = conn_check.cursor()
 
         try:
             cur_check.execute(esiste_tabella)
-            return "Table %s exists" % tab_check
+            return "exists"
         except psycopg2.ProgrammingError as laTabellaNonEsiste:
             #descrizione_errore = laTabellaNonEsiste.pgerror
             codice_errore = laTabellaNonEsiste.pgcode
             #return descrizione_errore, codice_errore
-            return codice_errore, tab_check
+            return codice_errore
 
         cur_check.close()
         conn_check.close()
+
+    def fetch_results(self):
+
+        global lista_finale
+        lista_finale=[]
+
+        with open(self.proj_dir + self.paese + "/" + self.paese + ".txt", 'rb') as csvfile_pop_month:
+            pop_monthly_reader = csv.reader(csvfile_pop_month, delimiter=',', quotechar='"')
+            for row in pop_monthly_reader:
+                lista_finale.append(row)
 
     def leggi_valori_amministrativi(self):
 
@@ -542,7 +572,7 @@ class ManagePostgresDB(Progetto):
 
     def cancella_tabella(self):
 
-        comando_delete_table = "DROP TABLE " + self.schema + "." + self.tabella_pesi + " CASCADE;"
+        comando_delete_table = "DROP TABLE " + self.schema + ".sparc_population_month CASCADE;"
         try:
             self.cur.execute(comando_delete_table)
             return "Table deleted"
@@ -550,54 +580,19 @@ class ManagePostgresDB(Progetto):
             errore_delete_tabella = delErrore.pgerror
             return errore_delete_tabella
 
-    def crea_schema(self):
-
-        SQL = "CREATE SCHEMA %s;"
-
-        try:
-            self.cur.execute(SQL % self.schema)
-            return "Schema created"
-        except psycopg2.Error as createErrore:
-            descrizione_errore = createErrore.pgerror
-            codice_errore = createErrore.pgcode
-            print descrizione_errore,codice_errore
-            return descrizione_errore, codice_errore
-
-    def create_sparc_population_rp(self, nome_tabella):
-
-        SQL = "CREATE TABLE %s.%s %s %s;"
-        campi = """(
-             id serial,
-             iso3 character(3),
-             adm1_code character(5),
-             adm2_code character(5),
-             adm2_name character(120),
-             pop_25 integer,
-             pop_50 integer,
-             pop_100 integer,
-             pop_150 integer,
-             pop_200 integer,
-             pop_250 integer,
-             pop_500 integer,
-             pop_750 integer,
-             pop_1000 integer,"""
-        constraint = "CONSTRAINT pop_rp_pkey PRIMARY KEY (id))"
-
-        try:
-            comando = SQL % (self.schema, nome_tabella, campi, constraint)
-            self.cur.execute(comando)
-            print "Table Annual Created"
-        except psycopg2.Error as createErroreTabellaAnnuale:
-            descrizione_errore = createErroreTabellaAnnuale.pgerror
-            codice_errore = createErroreTabellaAnnuale.pgcode
-            print descrizione_errore, codice_errore
-
-    def create_sparc_monthly_precipitation(self, nome_tabella):
+    def create_sparc_population_month(self):
 
         SQL = "CREATE TABLE %s.%s %s %s;"
         campi = """(
            id serial,
-           title character(9),
+           iso3 character(3),
+           adm0_name character(120),
+           adm0_code character(8),
+           adm1_name character(120),
+           adm1_code character(8),
+           adm2_code character(8),
+           adm2_name character(120),
+           rp integer,
            jan integer,
            feb integer,
            mar integer,
@@ -605,85 +600,16 @@ class ManagePostgresDB(Progetto):
            may integer,
            jun integer,
            jul integer,
-           ago integer,
-           set integer,
+           aug integer,
+           sep integer,
            oct integer,
            nov integer,
            dec integer,
-           iso3 character(3),
-           adm1_code character(5),
-           adm2_code character(5),
-           adm2_name character(120),"""
-        constraint = "CONSTRAINT monthly_prec_pkey PRIMARY KEY (id));"
-
-        try:
-            comando = SQL % (self.schema, nome_tabella, campi, constraint)
-            self.cur.execute(comando)
-            print "Monthly Precipitation Table Created"
-        except psycopg2.Error as createErrore:
-            descrizione_errore = createErrore.pgerror
-            codice_errore = createErrore.pgcode
-            print descrizione_errore, codice_errore
-
-    def create_sparc_monthly_precipitation_norm(self, nome_tabella):
-
-        SQL = "CREATE TABLE %s.%s %s %s;"
-        campi = """(
-           id serial,
-           title character(9),
-           jan double precision,
-           feb double precision,
-           mar double precision,
-           apr double precision,
-           may double precision,
-           jun double precision,
-           jul double precision,
-           ago double precision,
-           set double precision,
-           oct double precision,
-           nov double precision,
-           dec double precision,
-           iso3 character(3),
-           adm1_code character(5),
-           adm2_code character(5),
-           adm2_name character(120),"""
-        constraint = "CONSTRAINT monthly_prec_norm_pkey PRIMARY KEY (id));"
-
-        try:
-            comando = SQL % (self.schema, nome_tabella, campi, constraint)
-            self.cur.execute(comando)
-            print "Monthly Precipitation Normalized Table Created"
-        except psycopg2.Error as createErrore:
-            descrizione_errore = createErrore.pgerror
-            codice_errore = createErrore.pgcode
-            print descrizione_errore, codice_errore
-
-    def create_sparc_population_month(self, nome_tabella):
-
-        SQL = "CREATE TABLE %s.%s %s %s;"
-        campi = """(
-           id serial,
-           title character(9),
-           jan float,
-           feb integer,
-           mar integer,
-           apr integer,
-           may integer,
-           jun integer,
-           jul integer,
-           ago integer,
-           set integer,
-           oct integer,
-           nov integer,
-           dec integer,
-           iso3 character(3),
-           adm1_code character(5),
-           adm2_code character(5),
-           adm2_name character(120),"""
+           n_cases double precision,"""
         constraint = "CONSTRAINT population_month_pkey PRIMARY KEY (id));"
 
         try:
-            comando = SQL % (self.schema, nome_tabella, campi, constraint)
+            comando = SQL % (self.schema, 'sparc_population_month', campi, constraint)
             self.cur.execute(comando)
             print "Monthly Population Split Table Created"
         except psycopg2.Error as createErrore:
@@ -692,10 +618,19 @@ class ManagePostgresDB(Progetto):
             print descrizione_errore, codice_errore
 
     def inserisci_valori_calcolati(self):
-        pass
-        # for chiave, valore in val_prec.items():
-        #     inserimento = "INSERT INTO " + self.schema + "." + self.nome_tabella + " (month, weight) VALUES (" + str(chiave) + "," + str(valore) + ");"
-        #     self.cur.execute(inserimento)
+
+        for linea in lista_finale:
+            inserimento = "INSERT INTO " + self.schema + ".sparc_population_month" + \
+                          " (iso3, adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name," \
+                          "rp,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,\"dec\", n_cases)" \
+                          "VALUES('" + str(linea[0]) + "','" + linea[1] + "'," + linea[2] + ",'" + linea[3] + "'," \
+                                     + linea[4] + "," + linea[5] + ",'" + linea[6] + "'," + linea[7] + "," \
+                                     + linea[8] + "," + linea[9] + "," + linea[10] + "," + linea[11] + "," \
+                                     + linea[12] + "," + linea[13] + "," + linea[14] + "," + linea[15] + "," \
+                                     + linea[16] + "," + linea[17] + "," + linea[18] + "," + linea[19] + "," \
+                                     + linea[20] + ");"
+            #print inserimento
+            self.cur.execute(inserimento)
 
     def salva_cambi(self):
         try:

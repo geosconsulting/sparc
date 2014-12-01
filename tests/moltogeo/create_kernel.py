@@ -52,4 +52,17 @@ for file in os.listdir(events_location):
         #add_prj(paese_attivo)
         create_heat_map(paese_attivo)
 
+def create_global_heat_map():
+
+    event_file_shp = "C:/data/tools/sparc/input_data/geocoded/shp/global_accidents.shp"
+    krn_map_file = "C:/data/tools/sparc/input_data/geocoded/risk_map/global_accidents.tif"
+
+    try:
+        arcpy.gp.KernelDensity_sa(event_file_shp, "NONE", krn_map_file, "0.02", "", "SQUARE_MAP_UNITS")
+    except arcpy.ExecuteError:
+        print arcpy.GetMessages(2)
+        arcpy.AddError(arcpy.GetMessages(2))
+    except Exception as e:
+        print e.args[0]
+        arcpy.AddError(e.args[0])
 

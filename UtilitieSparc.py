@@ -23,7 +23,7 @@ class UtilitieSparc(object):
     proj_dir = os.getcwd() + "/projects/"
     driver = ogr.GetDriverByName("ESRI Shapefile")
     #DA MAIN
-    shape_countries = "input_data/gaul/gaul_wfp.shp"
+    shape_countries = "input_data/gaul/gaul_wfp_iso.shp"
 
     #DA RECORSIVO
     #shape_countries = "c:/data/tools/sparc/input_data/gaul/gaul_wfp.shp"
@@ -51,10 +51,13 @@ class UtilitieSparc(object):
 
        numFeatures = self.layer.GetFeatureCount()
        lista_stati = []
+       lista_iso = []
        for featureNum in range(numFeatures):
            feature = self.layer.GetFeature(featureNum)
            nome_paese = feature.GetField(self.campo_nome_paese)
+           code_paese = feature.GetField(self.campo_iso_paese)
            lista_stati.append(nome_paese)
+           lista_iso.append(code_paese)
 
        seen = set()
        seen_add = seen.add
@@ -163,8 +166,8 @@ class GeocodingEmDat(object):
         successo = 0
         insuccesso = 0
 
-        geocoding_success_file = "input_data/geocoded/text/" + self.paese + ".txt"
-        geocoding_fail_file = "input_data/geocoded/text/" + self.paese + "_fail.txt"
+        geocoding_success_file = "C:/data/tools/sparc/input_data/geocoded/text/" + self.paese + ".txt"
+        geocoding_fail_file = "C:/data/tools/sparc/input_data/geocoded/text/" + self.paese + "_fail.txt"
 
         # Control if accidents have been geocoded already
         if os.path.exists(geocoding_success_file):
@@ -427,15 +430,15 @@ class GeocodingEmDat(object):
             print e.args[0]
             arcpy.AddError(e.args[0])
 
-class ManagePostgresDB(object):
+class ConnectionPostgresDB(object):
 
     def __init__(self,paese,admin):
        self.paese = paese
        self.admin = admin
        self.schema = 'public'
        self.dbname = 'geonode-imports'
-       self.user = 'postgres'
-       self.password = 'antarone'
+       self.user = 'geonode'
+       self.password = 'geonode'
 
     def leggi_valori_amministrativi(self):
 

@@ -82,7 +82,7 @@ def reclass_flood(paese):
     # Process: Reclassify
     arcpy.gp.Reclassify_sa(paese_all_rp, "Value", "0 NODATA;1000 1000;1500 500;1700 200;1800 100;1850 50;1875 25", paese_all_rp_rcl, "DATA")
 
-#reclass_floods('India')
-#merge_floods('Zimbabwe')
-reclass_flood('Zimbabwe')
+#reclass_floods('Gabon')
+#merge_floods('Gabon')
+#reclass_flood('Gabon')
 
