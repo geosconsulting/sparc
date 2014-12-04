@@ -12,9 +12,7 @@ def richieste_wordlBank_dati_eco(iso3_paese):
     else:
         print "Connection failed"
 
-
     #return ritorno
-
 
 paese_scelta = raw_input("Cameroon/India/Honduras 1/2/3")
 paese_iso = ''

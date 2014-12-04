@@ -7,11 +7,10 @@ ogr.UseExceptions()
 
 import CompleteProcessing as completeSparc
 
-paese = "Algeria"
+paese = "India"
 dbname = "geonode-imports"
 user = "geonode"
 password = "geonode"
-
 lista_amministrazioni = None
 
 def processo_dati(paese):
@@ -85,8 +84,11 @@ def scrittura_dati(paese):
     scrittura_tabelle.close_connection()
 #scrittura_dati(paese)
 
-# fatemelo_fare = open("c:/data/tools/sparc/projects/algeria/algeria.txt","r")
-# come_lista = [line.split(',') for line in fatemelo_fare.readlines()]
-# for linea in come_lista:
-#     if len(linea)<21:
-#         print linea
+def gekko(paese):
+    fatemelo_fare = open("c:/data/tools/sparc/projects/" + paese.lower() + "/" + paese + ".txt","r")
+    come_lista = [line.split(',') for line in fatemelo_fare.readlines()]
+    for linea in come_lista:
+        if len(linea) < 21:
+            print linea
+
+#gekko(paese)

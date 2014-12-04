@@ -6,9 +6,9 @@ import os
 # Check out any necessary licenses
 arcpy.CheckOutExtension("spatial")
 
-countries_shp_location = 'C:/data/input_data/countries'
-events_location = 'C:/data/tools/sparc/tests/classes/geocodifica/shp/'
-risk_map_location = 'C:/data/tools/sparc/tests/classes/geocodifica/risk_map/'
+countries_shp_location = 'C:/data/tools/sparc/input_data/countries'
+events_location = 'C:/data/tools/sparc/input_data/geocoded/shp/'
+risk_map_location = 'C:/data/tools/sparc/input_data/geocoded/risk_map/'
 
 def add_prj(paese):
 
@@ -46,11 +46,14 @@ def create_heat_map(paese):
         print e.args[0]
         arcpy.AddError(e.args[0])
 
-for file in os.listdir(events_location):
-    if file.endswith(".shp"):
-        paese_attivo = file.split(".")[0]
-        #add_prj(paese_attivo)
-        create_heat_map(paese_attivo)
+# for file in os.listdir(events_location):
+#     if file.endswith(".shp"):
+#         paese_attivo = file.split(".")[0]
+#         #add_prj(paese_attivo)
+#         create_heat_map(paese_attivo)
+
+create_heat_map("Swaziland")
+
 
 def create_global_heat_map():
 

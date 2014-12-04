@@ -48,16 +48,20 @@ class Progetto(object):
 
         self.cur = self.conn.cursor()
         #self.cur = self.conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
-        comando = "SELECT c.name,c.iso2,c.iso3,a.area_name FROM SPARC_wfp_countries c INNER JOIN SPARC_wfp_areas a ON c.wfp_area = a.area_id WHERE c.name = '" + self.paese + "';"
+        comando = "SELECT c.name,c.iso2,c.iso3,a.area_name FROM SPARC_wfp_countries c " \
+                  "INNER JOIN SPARC_wfp_areas a " \
+                  "ON c.wfp_area = a.area_id WHERE c.name = '" + self.paese + "';"
         self.cur.execute(comando)
         for row in self.cur:
             self.wfp_area = str(row[3]).strip()
             self.iso3 = row[2]
 
         #self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif" #popmap10.tif"
+        #print "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif"
         if os.path.isfile("C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif"):
             self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif" #popmap10.tif"
         else:
+            print "No Population Raster......"
             self.population_raster = "None"
 
         self.flood_aggregated = "C:/data/tools/sparc/input_data/flood/merged/" + self.paese + "_all_rp_rcl.tif"
@@ -256,7 +260,12 @@ class HazardAssessmentCountry(Progetto):
     def taglio_raster_inondazione_aggregato(self):
 
         #CUT and SAVE Flooded areas within the admin2 area
-        flood_out_rst = arcpy.Raster(self.flood_aggregated) * arcpy.Raster(admin_rast)
+        try:
+            flood_out_rst = arcpy.Raster(self.flood_aggregated) * arcpy.Raster(admin_rast)
+        except:
+            pass
+            return "NoFloodRaster"
+
         flood_out = self.dirOut + self.admin + "_agg.tif"
         flood_out_rst.save(flood_out)
         arcpy.CalculateStatistics_management(flood_out)
@@ -453,19 +462,26 @@ class MonthlyAssessmentCountry(Progetto):
     def population_flood_prone_areas(self):
 
         global population_in_flood_prone_areas
+        population_in_flood_prone_areas = {}
+
         try:
             tabella_calcolata = self.dirOut + self.admin + "_pop_stat.dbf"
             tab_cur_pop = arcpy.da.SearchCursor(tabella_calcolata, "*")
             campo_tempo_ritorno = tab_cur_pop.fields.index('Value')
             campo_pop_affected = tab_cur_pop.fields.index('SUM')
-            population_in_flood_prone_areas = {}
             for riga_pop in tab_cur_pop:
                 tempo_ritorno = riga_pop[campo_tempo_ritorno]
                 population_tempo_ritorno = riga_pop[campo_pop_affected]
                 if population_tempo_ritorno > 0:
                     population_in_flood_prone_areas[tempo_ritorno] = population_tempo_ritorno
         except:
-            pass
+            population_in_flood_prone_areas[25] = 0
+            population_in_flood_prone_areas[50] = 0
+            population_in_flood_prone_areas[100] = 0
+            population_in_flood_prone_areas[200] = 0
+            population_in_flood_prone_areas[500] = 0
+            population_in_flood_prone_areas[1000] = 0
+            #pass
 
         return "Population in flood prone areas calculated....\n"
 

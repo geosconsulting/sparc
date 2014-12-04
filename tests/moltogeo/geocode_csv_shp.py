@@ -12,7 +12,7 @@ class GeocodeCsv(object):
 
     def __init__(self, paese):
         self.paese = paese
-        self.historical_table = "c:/data/input_data/historical_data/floods - refine.csv"
+        self.historical_table = "C:/data/tools/sparc/input_data/historical_data/floods - refine.csv"
         self.geolocator = Nominatim()
         self.geolocator_geonames = GeoNames(country_bias = self.paese, username='fabiolana', timeout=1)
 
@@ -38,8 +38,8 @@ class GeocodeCsv(object):
         successo = 0
         insuccesso = 0
 
-        geocoding_testo = open("geocodifica/" + self.paese + ".txt", "wb+")
-        geocoding_testo_fail = open("geocodifica/" + self.paese + "_fail.txt", "wb+")
+        geocoding_testo = open("c:/data/tools/sparc/input_data/geocoded/text/" + self.paese + ".txt", "wb+")
+        geocoding_testo_fail = open("c:/data/tools/sparc/input_data/geocoded/text/" + self.paese + "_fail.txt", "wb+")
 
         geocoding_testo.write("id,lat,lon\n")
         geocoding_testo_fail.write("id,lat,lon\n")
@@ -96,7 +96,7 @@ class GeocodeCsv(object):
         def extract_country_shp():
 
             # Get the input Layer
-            inShapefile = "C:/data/input_data/gaul_2014_2008_2/gaul_wfp.shp"
+            inShapefile = "C:/data/tools/sparc/input_data/gaul/gaul_wfp_iso.shp"
             inDriver = ogr.GetDriverByName("ESRI Shapefile")
             inDataSource = inDriver.Open(inShapefile, 0)
             inLayer = inDataSource.GetLayer()
@@ -150,16 +150,16 @@ class GeocodeCsv(object):
         dentro = 0
         fuori = 0
 
-        coords_check_file_in = "geocodifica/" + self.paese + ".txt"
-        coords_validated_file_out = str('geocodifica/' + str(self.paese) + '.csv')
+        coords_check_file_in = "c:/data/tools/sparc/input_data/geocoded/text/" + self.paese + ".txt"
+        coords_validated_file_out = str('c:/data/tools/sparc/input_data/geocoded/csv/' + str(self.paese) + '.csv')
 
-        if os.path.exists("C:/data/countries/" + self.paese + ".shp"):
-            sf = shapefile.Reader("C:/data/countries/" + self.paese + ".shp")
+        if os.path.exists("C:/data/tools/sparc/input_data/countries/" + self.paese + ".shp"):
+            sf = shapefile.Reader("C:/data/tools/sparc/input_data/countries/" + self.paese + ".shp")
             calc_poligono_controllo()
         else:
             print "Devo estrarre"
             extract_country_shp()
-            sf = shapefile.Reader("C:/data/countries/" + self.paese + ".shp")
+            sf = shapefile.Reader("C:/data/tools/sparc/input_data/countries/" + self.paese + ".shp")
             calc_poligono_controllo()
 
         with open(coords_check_file_in) as csvfile_in:
@@ -185,7 +185,7 @@ class CreateGeocodedShp(object):
     def __init__(self, paese):
         self.paese = paese
         self.outDriver = ogr.GetDriverByName("ESRI Shapefile")
-        self.outShp = "geocodifica/" + self.paese + ".shp"
+        self.outShp = "C:/data/tools/sparc/input_data/geocoded/shp/" + self.paese + ".shp"
 
     def creazione_file_shp(self):
         # Remove output shapefile if it already exists
@@ -193,10 +193,10 @@ class CreateGeocodedShp(object):
             self.outDriver.DeleteDataSource(self.outShp)
 
         #Set up blank lists for data
-        x, y, nomeloc=[], [], []
+        x, y, nomeloc= [], [], []
 
         #read data from csv file and store in lists
-        with open('geocodifica/'+ str(self.paese) + '.csv', 'rb') as csvfile:
+        with open('C:/data/tools/sparc/input_data/geocoded/csv/'+ str(self.paese) + '.csv', 'rb') as csvfile:
             r = csv.reader(csvfile, delimiter=';')
             for i, row in enumerate(r):
                 if i > 0: #skip header
