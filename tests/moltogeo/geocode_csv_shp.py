@@ -103,7 +103,7 @@ class GeocodeCsv(object):
             print "ADM0_NAME = '" + self.paese + "'"
             inLayer.SetAttributeFilter("ADM0_NAME = '" + self.paese + "'")
             # Create the output LayerS
-            outShapefile = "C:/data/countries/" + self.paese + ".shp"
+            outShapefile = "C:/data/tools/sparc/input_data/countries/" + self.paese + ".shp"
             outDriver = ogr.GetDriverByName("ESRI Shapefile")
 
             # Remove output shapefile if it already exists

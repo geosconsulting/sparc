@@ -126,14 +126,12 @@ class Progetto(object):
     def livelli_amministrativi_0_1(self,code_admin):
 
         comando = "SELECT ADM0_CODE,ADM1_NAME,ADM1_code FROM sparc_gaul_wfp_iso WHERE adm2_code=" + str(code_admin) + ";"
-        #print comando
         self.cur.execute(comando)
         for row in self.cur:
             Progetto.ADM0_GAUL_code = row[0]
             Progetto.ADM1_GAUL_name = row[1]
             Progetto.ADM1_GAUL_code = row[2]
 
-        #print self.ADM0_GAUL_code, self.ADM1_GAUL_code,self.ADM1_GAUL_name
 
     def creazione_struttura(self,admin_inviata):
 
@@ -159,9 +157,6 @@ class Progetto(object):
         #return "Project created......\n"
 
 class HazardAssessmentCountry(Progetto):
-
-    #proj_dir = os.getcwd() + "/projects/"
-    #shape_countries = os.getcwd() + "/input_data/gaul/gaul_wfp_iso.shp"
 
     def estrazione_poly_admin(self):
 

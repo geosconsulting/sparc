@@ -52,7 +52,7 @@ def create_heat_map(paese):
 #         #add_prj(paese_attivo)
 #         create_heat_map(paese_attivo)
 
-create_heat_map("Swaziland")
+create_heat_map("Turkmenistan")
 
 
 def create_global_heat_map():
