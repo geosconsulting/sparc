@@ -102,53 +102,55 @@ def valori_normalizzati_precipitazione_admin2(adm2_ricerca):
 
     return precipitazioni_mensili
 
-def inserisci(lista_comandi):
+def inserisci(comando):
 
     conn_insert = psycopg2.connect(connection_string)
     cur_insert = conn_insert.cursor()
 
-    for comando in lista_comandi:
-        #print comando
-        cur_insert.execute(comando)
+    #print comando
+    cur_insert.execute(comando)
 
     conn_insert.commit()
     conn_insert.close()
     cur_insert.close()
 
-paese_ricerca = "Angola"
-lista_ritornata = lista_aree_amministrative(paese_ricerca)
 
-print len(lista_ritornata)
+with open("C:/data/tools/sparc/projects/lista.txt") as fileggio:
+   paesi = [linea.strip() for linea in fileggio]
+for paese_ricerca in paesi:
+    #paese_ricerca = "Angola"
+    print "Processando %s " % paese_ricerca
+    lista_ritornata = lista_aree_amministrative(paese_ricerca.capitalize())
+    print "Ci sono %d aree amministratice in %s" % ((len(lista_ritornata)), paese_ricerca)
 
-primo = normalizzazione_incidenti_mensili_paese(paese_ricerca)
-df_date_inizio = pd.DataFrame(dict(primo[0]).items(),columns=['Month', 'Cases'])
-#print df_date_inizio
+    primo = normalizzazione_incidenti_mensili_paese(paese_ricerca)
+    df_date_inizio = pd.DataFrame(dict(primo[0]).items(),columns=['Month', 'Cases'])
+    #print df_date_inizio
 
-valori_normalizzati = (df_date_inizio.Cases - df_date_inizio.Cases.min()) / (df_date_inizio.Cases.max() - df_date_inizio.Cases.min())
-df_valori_normalizzati = pd.DataFrame(valori_normalizzati, columns=['Cases'])
-#print df_valori_normalizzati
+    valori_normalizzati = (df_date_inizio.Cases - df_date_inizio.Cases.min()) / (df_date_inizio.Cases.max() - df_date_inizio.Cases.min())
+    df_valori_normalizzati = pd.DataFrame(valori_normalizzati, columns=['Cases'])
+    #print df_valori_normalizzati
 
-lista_comandi = []
-for adm in lista_ritornata:
-    attivo = adm[2].strip()
-    precipi = valori_normalizzati_precipitazione_admin2(attivo)
-    df_norm_prec = pd.DataFrame(precipi.items(), columns=['Month', 'MM'])
-    #print df_norm_prec
+    inizio = 0
+    for adm in lista_ritornata:
 
-    df_globale = pd.merge(df_date_inizio, df_norm_prec, on='Month')
-    df_globale['Norm_Cases'] = df_valori_normalizzati
-    #print df_globale
+        attivo = adm[2].strip()
+        precipi = valori_normalizzati_precipitazione_admin2(attivo)
+        df_norm_prec = pd.DataFrame(precipi.items(), columns=['Month', 'MM'])
+        #print df_norm_prec
 
-    correlazione = df_globale['MM'].corr(df_globale['Norm_Cases'])
-    #print type(correlazione)
+        df_globale = pd.merge(df_date_inizio, df_norm_prec, on='Month')
+        df_globale['Norm_Cases'] = df_valori_normalizzati
+        #print df_globale
 
-    if np.isnan(correlazione):
-        correlazione = 0.00
+        correlazione = df_globale['MM'].corr(df_globale['Norm_Cases'])
+        if np.isnan(correlazione):
+            correlazione = 0.00
+        #print "Per area amministrativa %s il coeffciente di correlazione e' %.2f" % (attivo,correlazione)
 
-    linea = str(adm[0]).strip() + "','" + str(adm[1]).strip() + "','" + attivo + "'," + str(correlazione)
-    #print linea
-    inserimento = "INSERT INTO public.sparc_correlation(adm0_name,adm2_code,adm2_name,correlation) VALUES('" + linea + ");"
-    lista_comandi.append(inserimento)
-    #print lista_comandi
-
-#inserisci(lista_comandi)
+        linea = str(adm[0]).strip() + "','" + str(adm[1]).strip() + "','" + attivo + "'," + str(correlazione)
+        #print linea
+        inizio += 1
+        print "Processando %d record nome %s " % (inizio,attivo)
+        inserimento = "INSERT INTO public.sparc_correlation(adm0_name,adm2_code,adm2_name,correlation) VALUES('" + linea + ");"
+        inserisci(inserimento)
