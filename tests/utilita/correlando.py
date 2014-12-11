@@ -115,13 +115,10 @@ def inserisci(lista_comandi):
     conn_insert.close()
     cur_insert.close()
 
-# with open("C:/data/tools/sparc/projects/prima_lista.txt") as fileggio:
-#    paesi = [linea.strip() for linea in fileggio]
-#
-# for paese in paesi:
-    #paese_ricerca = paese.title()
-paese_ricerca = "Afghanistan"
+paese_ricerca = "Angola"
 lista_ritornata = lista_aree_amministrative(paese_ricerca)
+
+print len(lista_ritornata)
 
 primo = normalizzazione_incidenti_mensili_paese(paese_ricerca)
 df_date_inizio = pd.DataFrame(dict(primo[0]).items(),columns=['Month', 'Cases'])
@@ -154,4 +151,4 @@ for adm in lista_ritornata:
     lista_comandi.append(inserimento)
     #print lista_comandi
 
-inserisci(lista_comandi)
+#inserisci(lista_comandi)
