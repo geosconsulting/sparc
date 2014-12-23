@@ -1,0 +1,85 @@
+SEQ	PAESE	ISO3	POP_Raster	FLODD_Raster	Ready	Upload DB
+1	Afghanistan	AFG	o	o	o	o
+2	Algeria	DZA	o	o	o	
+3	Angola	AGO	o	o	o	
+4	Armenia	ARM	x	o	FALSE	
+5	Bangladesh	BGD	o	o	o	
+6	Benin	BEN	o	o	o	
+7	Bhutan	BTN	x	o	FALSE	
+8	Botswana	BWA	o	o	o	
+9	Burundi	BDI	o	o	o	
+10	Burkina Faso	BFA	o	o	o	
+11	Cambodia	KHM	o	o	o	
+12	Cameroon	CMR	o	o	o	
+13	Cape Verde	CPV	o	o	o	
+14	Central African Republic	CAF	o	o	o	
+15	Ivory Coast	CIV	o	o	o	
+16	Chad	TCD	o	o	o	
+17	Democratic Republic of the Congo	COD	o	o	o	
+18	Congo	COG	o	o	o	
+19	Colombia	COL	o	o	o	
+20	Cuba	CUB	o	o	o	
+21	Djibouti	DJI	o	o	o	
+22	Bolivia	BOL	o	o	o	
+23	Ecuador	ECU	o	o	o	
+24	Egypt	EGY	o	o	o	
+25	El Salvador	SLV	o	o	o	
+26	Ethiopia	ETH	o	o	o	
+27	Eritrea	ERI	o	o	o	
+28	Gabon	GAB	o	o	o	
+29	Gambia	GMB	o	o	o	
+30	Ghana	GHA	o	o	o	
+31	Guatemala	GTM	o	o	o	
+32	Equatorial Guinea	GNQ	o	o	o	
+33	Guinea	GIN	o	o	o	
+34	Guinea-Bissau	GNB	o	o	o	
+35	Haiti	HTI	o	o	o	
+36	Honduras	HND	o	o	o	
+37	India	IND	o	o	o	
+38	Indonesia	IDN	o	o	o	
+39	Iran	IRN	x	o	FALSE	
+40	Iraq	IRQ	x	o	FALSE	
+41	Jordan	JOR	o	o	o	
+42	Kenya	KEN	o	o	o	
+43	Kyrgyzstan	KGZ	o	o	o	
+44	Lebanon	LBN	o	o	o	
+45	Lesotho	LSO	o	o	o	
+46	Lao PDR	LAO	o	o	o	
+47	Liberia	LBR	o	o	o	
+48	Madagascar	MDG	o	o	o	
+49	Malawi	MWI	o	o	o	
+50	Myanmar	MMR	o	o	o	
+51	Malaysia	MYS	o	o	o	
+52	Mali	MLI	o	o	o	
+53	Mauritania	MRT	o	o	o	
+54	Mozambique	MOZ	o	o	o	
+55	Namibia	NAM	o	o	o	
+56	Nepal	NPL	o	o	o	
+57	Nicaragua	NIC	o	o	o	
+58	Niger	NER	o	o	o	
+59	Pakistan	PAK	o	o	o	
+60	North Korea	PRK	o	o	o	
+61	Peru	PER	o	o	o	
+62	Palestine	PSE	o	o	o	
+63	Philippines	PHL	o	o	o	
+64	Sao Tome and Principe	STP	o	o	o	
+65	Rwanda	RWA	o	o	o	
+66	Senegal	SEN	o	o	o	
+67	Syria	SYR	o	o	o	
+68	Sierra Leone	SLE	o	o	o	
+69	Somalia	SOM	o	o	o	
+70	South Sudan	SSD	o	o	o	
+71	Sri Lanka	LKA	o	o	o	
+72	Sudan	SDN	o	o	o	
+73	Swaziland	SWZ	o	o	o	
+74	Tanzania	TZA	o	o	o	
+75	Tajikistan	TJK	o	o	o	
+76	Timor-Leste	TLS	o	o	o	
+77	Thailand	THA	o	o	o	
+78	Turkmenistan	TKM	o	o	o	
+79	Togo	TGO	o	o	o	
+80	Tunisia	TUN	o	o	o	
+81	Uganda	UGA	o	o	o	
+82	Yemen	YEM	o	o	o	
+83	Zambia	ZMB	o	o	o	
+84	Zimbabwe	ZWE	o	o	o	

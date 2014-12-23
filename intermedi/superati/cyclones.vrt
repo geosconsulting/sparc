@@ -1,0 +1,15 @@
+<OGRVRTDataSource>
+    <OGRVRTLayer name="cyclones_fields">
+        <SrcDataSource>cyclones_fields.csv</SrcDataSource>
+        <GeometryType>wkbPolygon</GeometryType>
+        <Field name="OBJECTID" src="OBJECTID" type="Integer" width="8" />
+        <Field name="eventid" src="eventid" type="Integer" width="8" />
+        <Field name="episodeid" src="episodeid" type="Integer" width="8" />
+        <Field name="eventtype" src="eventtype" type="String" width="4" />
+        <Field name="polygondate" src="polygondate" type="String" width="8" />
+        <Field name="polygontype" src="polygontype" type="String" width="12" />
+        <Field name="polygonlabel" src="polygonlabel" type="String" width="12" />
+        <LayerSRS>WGS84</LayerSRS>
+        <GeometryField encoding="WKT" field="the_geom"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>

@@ -1,0 +1,66 @@
+<PAMDataset>
+  <Metadata>
+    <MDI key="DataType">Generic</MDI>
+  </Metadata>
+  <Metadata domain="Esri">
+    <MDI key="PyramidResamplingType">NEAREST</MDI>
+  </Metadata>
+  <PAMRasterBand band="1">
+    <GDALRasterAttributeTable>
+      <FieldDefn index="0">
+        <Name>Rowid</Name>
+        <Type>0</Type>
+        <Usage>0</Usage>
+      </FieldDefn>
+      <FieldDefn index="1">
+        <Name>VALUE</Name>
+        <Type>0</Type>
+        <Usage>0</Usage>
+      </FieldDefn>
+      <FieldDefn index="2">
+        <Name>COUNT</Name>
+        <Type>0</Type>
+        <Usage>0</Usage>
+      </FieldDefn>
+      <Row index="0">
+        <F>0</F>
+        <F>25</F>
+        <F>93674</F>
+      </Row>
+      <Row index="1">
+        <F>1</F>
+        <F>50</F>
+        <F>2403</F>
+      </Row>
+      <Row index="2">
+        <F>2</F>
+        <F>100</F>
+        <F>2383</F>
+      </Row>
+      <Row index="3">
+        <F>3</F>
+        <F>200</F>
+        <F>2126</F>
+      </Row>
+      <Row index="4">
+        <F>4</F>
+        <F>500</F>
+        <F>2704</F>
+      </Row>
+      <Row index="5">
+        <F>5</F>
+        <F>1000</F>
+        <F>2391</F>
+      </Row>
+    </GDALRasterAttributeTable>
+    <Metadata>
+      <MDI key="STATISTICS_MINIMUM">25</MDI>
+      <MDI key="STATISTICS_MAXIMUM">1000</MDI>
+      <MDI key="STATISTICS_MEAN">64.992761234281</MDI>
+      <MDI key="STATISTICS_STDDEV">162.59920891273</MDI>
+      <MDI key="STATISTICS_SKIPFACTORX">1</MDI>
+      <MDI key="STATISTICS_SKIPFACTORY">1</MDI>
+      <MDI key="STATISTICS_EXCLUDEDVALUES"></MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

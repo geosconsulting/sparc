@@ -1,0 +1,85 @@
+name,official_name,iso2,iso3
+Afghanistan,Islamic Republic of Afghanistan,AF,AFG
+Algeria,People's Democratic Republic of Algeria,DZ,DZA
+Angola,Republic of Angola,AO,AGO
+Armenia,Republic of Armenia,AM,ARM
+Bangladesh,People's Republic of Bangladesh,BD,BGD
+Benin,Republic of Benin,BJ,BEN
+Bhutan,Kingdom of Bhutan,BT,BTN
+Botswana,Republic of Botswana,BW,BWA
+Burundi,Republic of Burundi,BI,BDI
+Burkina Faso,Burkina Faso,BF,BFA
+Cambodia,Kingdom of Cambodia,KH,KHM
+Cameroon,Republic of Cameroon,CM,CMR
+Cape Verde,Republic of Cape Verde,CV,CPV
+Central African Republic,Central African Republic,CF,CAF
+Ivory Coast,Republic of Côte d'Ivoire,CI,CIV
+Chad,Republic of Chad,TD,TCD
+Democratic Republic of the Congo,The Democratic Republic of the Congo,CD,COD
+Congo,Republic of the Congo,CG,COG
+Colombia,Republic of Colombia,CO,COL
+Cuba,Republic of Cuba,CU,CUB
+Djibouti,Republic of Djibouti,DJ,DJI
+Bolivia,Plurinational State of Bolivia,BO,BOL
+Ecuador,Republic of Ecuador,EC,ECU
+Egypt,Arab Republic of Egypt,EG,EGY
+El Salvador,Republic of El Salvador,SV,SLV
+Ethiopia,Federal Democratic Republic of Ethiopia,ET,ETH
+Eritrea,The State of Eritrea,ER,ERI
+Gabon,Gabonese Republic,GA,GAB
+Gambia,Republic of the Gambia,GM,GMB
+Ghana,Republic of Ghana,GH,GHA
+Guatemala,Republic of Guatemala,GT,GTM
+Equatorial Guinea,Republic of Equatorial Guinea,GQ,GNQ
+Guinea,Republic of Guinea,GN,GIN
+Guinea-Bissau,Republic of Guinea-Bissau,GW,GNB
+Haiti,Republic of Haiti,HT,HTI
+Honduras,Republic of Honduras,HN,HND
+India,Republic of India,IN,IND
+Indonesia,Republic of Indonesia,ID,IDN
+Iran,Islamic Republic of Iran,IR,IRN
+Iraq,Republic of Iraq,IQ,IRQ
+Jordan,Hashemite Kingdom of Jordan,JO,JOR
+Kenya,Republic of Kenya,KE,KEN
+Kyrgyzstan,Kyrgyz Republic,KG,KGZ
+Lebanon,Lebanese Republic,LB,LBN
+Lesotho,Kingdom of Lesotho,LS,LSO
+Lao PDR,Lao People's Democratic Republic,LA,LAO
+Liberia,Republic of Liberia,LR,LBR
+Madagascar,Republic of Madagascar,MG,MDG
+Malawi,Republic of Malawi,MW,MWI
+Myanmar,Republic of Myanmar,MM,MMR
+Malaysia,Malaysia,MY,MYS
+Mali,Republic of Mali,ML,MLI
+Mauritania,Islamic Republic of Mauritania,MR,MRT
+Mozambique,Republic of Mozambique,MZ,MOZ
+Namibia,Republic of Namibia,NA,NAM
+Nepal,Federal Democratic Republic of Nepal,NP,NPL
+Nicaragua,Republic of Nicaragua,NI,NIC
+Niger,Republic of the Niger,NE,NER
+Pakistan,Islamic Republic of Pakistan,PK,PAK
+North Korea,Democratic People's Republic of Korea,KP,PRK
+Peru,Republic of Peru,PE,PER
+Palestine,State of the Palestine,PS,PSE
+Philippines,Republic of the Philippines,PH,PHL
+Sao Tome and Principe,Democratic Republic of Sao Tome and Principe,ST,STP
+Rwanda,Rwandese Republic,RW,RWA
+Senegal,Republic of Senegal,SN,SEN
+Syria,Syrian Arab Republic,SY,SYR
+Sierra Leone,Republic of Sierra Leone,SL,SLE
+Somalia,Federal Republic of Somalia,SO,SOM
+South Sudan,Republic of South Sudan,SS,SSD
+Sri Lanka,Democratic Socialist Republic of Sri Lanka,LK,LKA
+Sudan,Republic of the Sudan,SD,SDN
+Swaziland,Kingdom of Swaziland,SZ,SWZ
+Tanzania,United Republic of Tanzania,TZ,TZA
+Tajikistan,Republic of Tajikistan,TJ,TJK
+Timor-Leste,Democratic Republic of Timor-Leste,TL,TLS
+Thailand,Kingdom of Thailand,TH,THA
+Turkmenistan,Turkmenistan,TM,TKM
+Togo,Togolese Republic,TG,TGO
+Tunisia,Republic of Tunisia,TN,TUN
+Uganda,Republic of Uganda,UG,UGA
+Yemen,Republic of Yemen,YE,YEM
+Zambia,Republic of Zambia,ZM,ZMB
+Zimbabwe,Republic of Zimbabwe,ZW,ZWE
