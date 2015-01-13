@@ -120,6 +120,7 @@ def inserisci(comando):
 with open("C:/data/tools/sparc/projects/DRC.txt") as fileggio:
    paesi = [linea.strip() for linea in fileggio]
 
+
 for paese in paesi:
 
     #paese_ricerca = "Angola"

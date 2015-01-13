@@ -1,26 +1,31 @@
 __author__ = 'fabio.lana'
 import requests
+import all_plots
 
-def richiesta_vam(iso3_paese):
+def richiesta_vam(adm0,adm1,adm2):
 
-    risposta = requests.get('http://reporting.vam.wfp.org/JSON/SPARC_GetFCS.aspx ?adm0=' + 43 + '&adm1=0&adm2=0&adm3=0&adm4=0&adm5=0&indTypeID=1 ')
+    richiesta_txt = requests.get('http://reporting.vam.wfp.org/JSON/SPARC_GetFCS.aspx?adm0=' +
+                                 str(adm0) + '&adm1=' + str(adm1) + '&adm2=' + str(adm2) + '&adm3=0&adm4=0&adm5=0&indTypeID=1')
 
-    lista_valori_mensili_pioggia = []
-
-    if r_1980_1999.status_code == 200:
-        risposta = r_1980_1999.json()
-        for valore_mensile in risposta[0]['monthVals']:
-            lista_valori_mensili_pioggia.append(valore_mensile)
+    if richiesta_txt.status_code == 200:
+        print("Server Responding..." + str(richiesta_txt.status_code))
+        risposta = richiesta_txt.json()
     else:
         print "Connection failed"
 
-    return lista_valori_vam
+    return risposta
 
+#http://reporting.vam.wfp.org/JSON/SPARC_GetFCS.aspx ?adm0=40764&adm1=2758&adm2=37047&adm3=0&adm4=0&adm5=0&indTypeID=1&startMonth=1&startYear=2011&endMonth=12&endYear=2013
+adm0 = 40764
+adm1 = 27568
+adm2 = 37047
+adm3 = 0
+adm4 = 0
+adm5 = 0
+indTypeID = 1
+startMonth = 1
+startYear = 2011
+endMonth = 12
+endYear = 2013
 
-paese_iso = 'TGO'
-paese_nome = 'Togo'
-valori_precipitazione_bancaMondiale_nazionale = richiesta_vam(paese_iso)
-ivaloraggi = all_plots.plot_monthly_mean_wb(paese_iso, valori_precipitazione_bancaMondiale_nazionale)
-dict_finale = richiesta_vam(paese_nome)
-labella_y = "Precipitation (mm) Real Time World Bank"
-all_plots.plot_monthly_danni("EM-DAT Registered Incidents", labella_y, paese_iso, ivaloraggi, dict_finale)
+print richiesta_vam(adm0,adm1,adm2)

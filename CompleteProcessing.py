@@ -132,7 +132,6 @@ class Progetto(object):
             Progetto.ADM1_GAUL_name = row[1]
             Progetto.ADM1_GAUL_code = row[2]
 
-
     def creazione_struttura(self,admin_inviata):
 
         os.chdir(self.proj_dir)

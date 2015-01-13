@@ -5,7 +5,6 @@ __author__ = 'fabio.lana'
 import HazardAssessment as ha
 import MonthlyDistribution as monDist
 import UtilitieSparc as us
-
 from Tkinter import *
 import ttk
 
