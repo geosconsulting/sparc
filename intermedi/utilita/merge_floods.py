@@ -63,7 +63,7 @@ def merge_floods(paese):
     ar500 = gdalnumeric.LoadFile(im_rp_500).astype(np.int16)
     ar1000 = gdalnumeric.LoadFile(im_rp_1000).astype(np.int16)
     somma = ar25 + ar50 + ar100 + ar200 + ar500 + ar1000
-    gdalnumeric.SaveArray(somma, "C:/data/tools/sparc/input_data/flood/merged/" + paese + "_all_rp.tif", format="GTiff", prototype=im_rp_1000)
+    gdalnumeric.SaveArray(somma, "C:/data/tools/sparc/input_data/flood/merged/" + paese + "_all_rp.tif", format="GTiff", prototype = im_rp_1000)
 
 def reclass_flood(paese):
 

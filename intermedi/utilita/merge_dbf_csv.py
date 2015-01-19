@@ -205,13 +205,13 @@ def inserisci_csv(ritornati_passati):
     conn_insert.close()
     cur_insert.close()
 
-with open("C:/data/tools/sparc/projects/lista_paesi.txt") as fileggio_paesi:
+with open("C:/data/tools/sparc/projects/DRC.txt") as fileggio_paesi:
     paesi = [linea.strip() for linea in fileggio_paesi]
     for paese in paesi:
         file_ricerca = "C:/data/tools/sparc/projects/" + paese.lower() + "/adm2_name.csv"
         with open(file_ricerca) as fileggio:
             adms = [linea.strip() for linea in fileggio]
-            ritornati = becca_il_dbf(paese.capitalize(), adms)
+            ritornati = becca_il_dbf(paese, adms)
         inserisci(ritornati)
 
 # with open("C:/data/tools/sparc/projects/lista_paesi.txt") as fileggio_paesi:
