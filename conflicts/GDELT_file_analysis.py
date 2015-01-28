@@ -95,26 +95,29 @@ def gdelt_pandas_conversion():
 # gdelt_pandas_conversion()
 tabella_gdelt =  pd.io.pickle.read_pickle(local_path + 'results/' + 'backup' + fips_country_code + '.pickle')
 
+tabella_gdelt.to_csv("illo.csv")
 #print tabella_gdelt.describe()
 
 df = tabella_gdelt[['Year','Actor1Name','Actor1Geo_FullName','Actor2Geo_Lat','Actor2Geo_Long']]
 df = df.dropna()
 #print df.head()
 
-out_file = 'GPS_Pts.shp'
+out_file = 'GDELT' + fips_country_code + '.shp'
 
 w = shapefile.Writer(shapefile.POINT)
-w.autoBalance = 1 #ensures gemoetry and attributes match
-w.field('id','C',40)
+w.autoBalance = 1 #ensures geometry and attributes match
+w.field('id','F',15,0)
 
 for illo in range(0,len(df)):
     coords = df.iloc[illo][3:5]
     print df.index[illo],coords[0],coords[1]
     w.point(float(coords[0]),float(coords[1]))
-    w.record('id',df.index[illo])
+    w.record(df.index[illo])
 
 #Save shapefile
 w.save(out_file)
+
+
 
 
 
