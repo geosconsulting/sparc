@@ -9,7 +9,6 @@ data_store = []
 point_counts = defaultdict(int)
 interaction_counts = defaultdict(int)
 
-
 class GDELT_Analysis(object):
 
     def GDELT_fields(self,file_name):
@@ -47,7 +46,7 @@ class GDELT_Analysis(object):
             except:
                 pass
 
-        return point_counts
+        return point_counts,interaction_counts
 
     def GDELTS_stat(self,point_counts):
 
@@ -65,7 +64,7 @@ class GDELT_Analysis(object):
         statistiche["Median points:"] = np.median(counts)
         return statistiche
 
-    def GDELT_maplot(self,point_counts):
+    def GDELT_maplot(self,point_counts): #,centro_lat,centro_lon,llat,llon,ulat,ulon):
 
         def get_size(count):
             '''
@@ -90,15 +89,17 @@ class GDELT_Analysis(object):
         event_map.drawcountries()
         event_map.fillcontinents(color='0.8')  # Light gray
         event_map.drawmapboundary()
+
         # Draw the points on the map:
         for point, count in point_counts.iteritems():
             x, y = event_map(point[1], point[0])  # Convert lat, long to y,x
             # print x , y
             marker_size = get_size(count)
             event_map.plot(x, y, 'ro', markersize=marker_size, alpha=0.3)
+
         plt.show()
 
-    def GDELT_interactions_maplot(self):
+    def GDELT_interactions_maplot(self,counts_int):
 
         max_val = np.log10(counts_int.max())
 
@@ -139,16 +140,18 @@ class GDELT_Analysis(object):
                 event_map.drawgreatcircle(x1, y1, x2, y2, linewidth=2,color='r', alpha=line_alpha)
         plt.show()
 
-PATH = r"C:\data\tools\conflicts\GDELT_Data/"
-last_gdelts_file = PATH + "GDELT.MASTERREDUCEDV2.txt"
-COUNTRY = "SDN"
-ANNO_init = 2012
-ANNO_end = 2013
-
-calcolo = GDELT_Analysis()
-#print calcolo.GDELT_fields(last_gdelts_file)
-print calcolo.GDELT_subsetting(last_gdelts_file, COUNTRY, ANNO_init, ANNO_end)
-#GDELT_coords()
-#GDELTS_stat()
-#GDELT_maplot()
-#GDELT_interactions_maplot()
+# PATH = r"C:\data\tools\conflicts\GDELT_Data/"
+# last_gdelts_file = PATH + "GDELT.MASTERREDUCEDV2.txt"
+# COUNTRY = "SDN"
+# ANNO_init = 2011
+# ANNO_end = 2014
+#
+# calcolo = GDELT_Analysis()
+# #print calcolo.GDELT_fields(last_gdelts_file)
+# data_store = calcolo.GDELT_subsetting(last_gdelts_file, COUNTRY, ANNO_init, ANNO_end)
+# punti = calcolo.GDELT_coords(data_store)[0]
+# linee = calcolo.GDELT_coords(data_store)[1]
+# print linee
+# print calcolo.GDELTS_stat(punti)
+# calcolo.GDELT_maplot(punti)
+# #calcolo.GDELT_interactions_maplot(linee)

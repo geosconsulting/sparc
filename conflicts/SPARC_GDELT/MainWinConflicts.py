@@ -8,10 +8,18 @@ import tkFileDialog
 import os
 
 import GDELT_Analysis
+import GDELT_DB
+
+obj_db = GDELT_DB.DB()
+connessione = obj_db.db_connect()
+paesi = obj_db.gather_paesi(connessione)
+paese = ""
+bbox = obj_db.boundinbox_paese(connessione,)
 
 class AppSPARConflicts:
 
-    def __init__(self,master):
+    def __init__(self, master):
+
 
         frame = Frame(master,height=32, width=600)
         frame.pack_propagate(0)
@@ -22,7 +30,7 @@ class AppSPARConflicts:
 
         self.box_value_country = StringVar()
         self.box_country = ttk.Combobox(frame, textvariable = [])
-        self.box_country['values'] = ['Sudan', 'Ethiopia', 'Benin']
+        self.box_country['values'] = paesi
         self.box_country.pack(side=LEFT)
 
         self.box_value_minYear = StringVar()
@@ -52,7 +60,7 @@ class AppSPARConflicts:
 
     def get_fields(self):
 
-        col_names = GDELT_txt_analysis.GDELT_fields(nomeFile)
+        col_names = GDELT_Analysis.GDELT_fields(nomeFile)
         for i, col_name in enumerate(col_names):
              self.area_messaggi.insert(INSERT, col_name + "\n")
 
@@ -66,7 +74,6 @@ class AppSPARConflicts:
         user = 'geonode'
         password = 'geonode'
         connection_string = "dbname=%s user=%s password=%s" % (dbname, user, password)
-
 
         db_connessione = psycopg2.connect(connection_string)
         db_connessione.cursor_factory = RealDictCursor
@@ -87,14 +94,14 @@ class AppSPARConflicts:
         messaggio = "%s con valore ISO %s between %s and %s \n" % (paese,iso, anno_min, anno_max)
         self.area_messaggi.insert(INSERT, messaggio)
 
-        store_eventi = GDELT_txt_analysis.GDELT_subsetting(nomeFile,iso,anno_min,anno_max)
+        store_eventi = GDELT_Analysis.GDELT_subsetting(nomeFile,iso,anno_min,anno_max)
         quanti_eventi = "There are %d cases %s-related records between %s and %s. " % (len(store_eventi), paese, anno_min, anno_max)
         self.area_messaggi.insert(INSERT, quanti_eventi + "\n")
 
-        coordinate = GDELT_txt_analysis.GDELT_coords(store_eventi)
-        statistiche = GDELT_txt_analysis.GDELTS_stat(coordinate)
+        coordinate = GDELT_Analysis.GDELT_coords(store_eventi)
+        statistiche = GDELT_Analysis.GDELTS_stat(coordinate)
         self.area_messaggi.insert(INSERT, statistiche + "\n")
-        GDELT_txt_analysis.GDELT_maplot(coordinate)
+        GDELT_Analysis.GDELT_maplot(coordinate)
 
 root = Tk()
 root.title("SPARC Conflict Analysis")

@@ -16,8 +16,8 @@ class DB(object):
         db_cursore = db_connessione.cursor()
         return db_cursore
 
+    def gather_paesi(self,db_cursore):
 
-    def valuti_paesi(self,db_cursore):
         sql = "SELECT DISTINCT name FROM sparc_wfp_countries;"
         db_cursore.execute(sql);
         risultati = db_cursore.fetchall()
@@ -34,11 +34,33 @@ class DB(object):
         risultati = db_cursore.fetchall()
         return risultati
 
+    def boundinbox_paese(self,db_cursore,paese_ricerca):
+
+        sql = "SELECT ST_Extent(geom) as extent FROM sparc_gaul_wfp_iso WHERE adm0_name = '" + paese_ricerca + "';"
+        db_cursore.execute(sql);
+        bbox = db_cursore.fetchall()
+
+        #print bbox
+        llat = bbox[0]['extent'].split("(")[1].split(" ")[0]
+        llon = bbox[0]['extent'].split("(")[1].split(" ")[1].split(",")[0]
+        #print llat,llon
+
+        ulat = bbox[0]['extent'].split(",")[1].split(" ")[0]
+        ulon = bbox[0]['extent'].split(",")[1].split(" ")[1].replace(")","")
+        #print ulat,ulon
+
+        lat_paese = float(ulat) - float(llat)
+        lon_paese = float(ulon) - float(llon)
+        centro_lat = lat_paese/2
+        centro_lon = lon_paese/2
+
+        return llat,llon,ulat,ulon,centro_lat,centro_lon
 
 objDB = DB()
 connessione = objDB.db_connect()
-print objDB.valuti_paesi(connessione)
-print objDB.valori_amministrativi(connessione,"Sudan")[0]['iso3']
+#print objDB.gather_paesi(connessione)
+#print objDB.valori_amministrativi(connessione,"Sudan")[0]['iso3']
+print objDB.boundinbox_paese(connessione,"Sudan")
 
 
 
