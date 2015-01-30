@@ -1,5 +1,5 @@
 __author__ = 'fabio.lana'
-from madre import Madre
+from intermedi.casini.superati.madre import Madre
 
 class Figlia(Madre):
 

@@ -1,4 +1,4 @@
-from intermedi.superati import SPARCFlood as SPRC
+from intermedi.casini.superati import SPARCFlood as SPRC
 
 __author__ = 'fabio.lana'
 admin_area_name = "thane"

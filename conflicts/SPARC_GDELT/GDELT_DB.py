@@ -32,6 +32,7 @@ class DB(object):
         sql = "SELECT name,iso2,iso3 FROM sparc_wfp_countries WHERE name = '" + paese_ricerca + "';"
         db_cursore.execute(sql);
         risultati = db_cursore.fetchall()
+
         return risultati
 
     def boundinbox_paese(self,db_cursore,paese_ricerca):
@@ -40,13 +41,12 @@ class DB(object):
         db_cursore.execute(sql);
         bbox = db_cursore.fetchall()
 
-        #print bbox
-        llat = bbox[0]['extent'].split("(")[1].split(" ")[0]
-        llon = bbox[0]['extent'].split("(")[1].split(" ")[1].split(",")[0]
+        llat = float(bbox[0]['extent'].split("(")[1].split(" ")[0])
+        llon = float(bbox[0]['extent'].split("(")[1].split(" ")[1].split(",")[0])
         #print llat,llon
 
-        ulat = bbox[0]['extent'].split(",")[1].split(" ")[0]
-        ulon = bbox[0]['extent'].split(",")[1].split(" ")[1].replace(")","")
+        ulat = float(bbox[0]['extent'].split(",")[1].split(" ")[0])
+        ulon = float(bbox[0]['extent'].split(",")[1].split(" ")[1].replace(")",""))
         #print ulat,ulon
 
         lat_paese = float(ulat) - float(llat)
@@ -54,13 +54,13 @@ class DB(object):
         centro_lat = lat_paese/2
         centro_lon = lon_paese/2
 
-        return llat,llon,ulat,ulon,centro_lat,centro_lon
+        return centro_lat, centro_lon, llat,llon, ulat, ulon
 
-objDB = DB()
-connessione = objDB.db_connect()
+#objDB = DB()
+#connessione = objDB.db_connect()
 #print objDB.gather_paesi(connessione)
 #print objDB.valori_amministrativi(connessione,"Sudan")[0]['iso3']
-print objDB.boundinbox_paese(connessione,"Sudan")
+#print objDB.boundinbox_paese(connessione,"Sudan")
 
 
 

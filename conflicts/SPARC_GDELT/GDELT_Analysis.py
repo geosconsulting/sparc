@@ -64,26 +64,27 @@ class GDELT_Analysis(object):
         statistiche["Median points:"] = np.median(counts)
         return statistiche
 
-    def GDELT_maplot(self,point_counts): #,centro_lat,centro_lon,llat,llon,ulat,ulon):
+    def GDELT_maplot(self, point_counts, centro_lat, centro_lon, llat, llon, ulat, ulon): #,centro_lat,centro_lon,llat,llon,ulat,ulon):
+
+        print point_counts
+        print centro_lat, centro_lon, llat, llon, ulat, ulon
 
         def get_size(count):
-            '''
-            Convert a count to a point size.
-            Log-scaled.
-            '''
+            ''' Convert a count to a point size. Log-scaled.'''
             scale_factor = 2
             return np.log10(count + 1) * scale_factor
 
         # Note that we're drawing on a regular matplotlib figure, so we set the
         # figure size just like we would any other.
-        plt.figure(figsize=(12, 12))
+        plt.figure(figsize=(10, 10))
 
         # Create the Basemap
         event_map = Basemap(projection='merc',
                             resolution='l', area_thresh=1000.0,  # Low resolution
-                            lat_0=15, lon_0=30,  # Map center
-                            llcrnrlon=10, llcrnrlat=1,  # Lower left corner
-                            urcrnrlon=50, urcrnrlat=30)  # Upper right corner
+                            lat_0= centro_lat, lon_0=centro_lon,  # Map center
+                            llcrnrlon=llon, llcrnrlat=llat,  # Lower left corner
+                            urcrnrlon=ulon, urcrnrlat=ulat)  # Upper right corner
+
         # Draw important features
         event_map.drawcoastlines()
         event_map.drawcountries()
@@ -96,6 +97,23 @@ class GDELT_Analysis(object):
             # print x , y
             marker_size = get_size(count)
             event_map.plot(x, y, 'ro', markersize=marker_size, alpha=0.3)
+
+        plt.show()
+
+    def SOLO_maplot(self,centro_lat,centro_lon,llat,llon,ulat,ulon):
+
+        # Note that we're drawing on a regular matplotlib figure, so we set the
+        # figure size just like we would any other.
+        plt.figure(figsize=(6, 6))
+
+        # Create the Basemap
+        event_map = Basemap(projection='lcc',
+                            resolution= None,
+                            lat_0 = centro_lat, lon_0=centro_lon,  # Map center
+                            llcrnrlon=llon, llcrnrlat=llat,  # Lower left corner
+                            urcrnrlon=ulon, urcrnrlat=ulat)  # Upper right corner
+        # Draw important features
+        event_map.bluemarble()
 
         plt.show()
 

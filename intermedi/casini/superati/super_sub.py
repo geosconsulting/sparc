@@ -19,7 +19,7 @@ class ChildClass(ParentClass):
 x = ChildClass("Come t'antitoli")
 x.test()
 
-from encapsulation import Account
+from intermedi.casini.superati.encapsulation import Account
 print Account.number
 
 x = Account("Fabio",1221, 253)

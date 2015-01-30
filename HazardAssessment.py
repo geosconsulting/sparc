@@ -205,6 +205,8 @@ class HazardAssessment(object):
 
         titolofinestra = "People Living in Flood Prone Areas"
 
+        print(pop_freqs)
+
         # Plotting affected people
         affected_people = {}
         for row in pop_freqs:
@@ -226,6 +228,8 @@ class HazardAssessment(object):
         return affected_people
 
     def plot_risk_curve(self):
+
+        print affected_people_ordered
 
         pop_temp = 0
         for periodo in affected_people_ordered.iteritems():
@@ -249,15 +253,18 @@ class HazardAssessment(object):
 
     def plot_risk_interpolation(self):
 
-        x, y =  self.dati_per_plot.keys(),  self.dati_per_plot.values()
+        print self.dati_per_plot
+        x, y = self.dati_per_plot.keys(),  self.dati_per_plot.values()
 
         # use finer and regular mesh for plot
         xfine = np.linspace(0.1, 4, 25)
 
         # interpolate with piecewise constant function (p =0)
         y0 = scipy.interpolate.interp1d(x, y, kind='nearest')
+
         # interpolate with piecewise linear func (p =1)
         y1 = scipy.interpolate.interp1d(x, y, kind='linear')
+
         plt.grid(True)
         pylab.plot(x, y, 'o', label='Affected People')
         pylab.plot(xfine, y0(xfine), label='nearest')
@@ -265,10 +272,13 @@ class HazardAssessment(object):
 
         pylab.legend()
         pylab.xlabel('x')
+
         #pylab.savefig('interpolate.pdf')
         pylab.show()
 
     def interpolazione_tempi_ritorno_intermedi(self):
+
+        print(self.dati_per_prob)
 
         dict_data = dict(self.dati_per_prob)
         dict_data_new = dict_data.copy()
@@ -294,6 +304,7 @@ class HazardAssessment(object):
 
     def plot_risk_interpolation_linear(self):
 
+        print(data_prob)
         titolo_plot = "Risk Curve using RP 25,50,75,100,150,200,500,750 and 1000 Years"
         x, y = data_prob.keys(), data_prob.values()
         xfine = np.linspace(0.1, 4, 25)
