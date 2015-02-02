@@ -11,10 +11,10 @@ import pandas as pd
 import shapefile
 
 gdelt_base_url = 'http://data.gdeltproject.org/events/'
-local_path = 'c:/data/tools/conflicts/GDELT_Data/'
+local_path = '../SPARC_GDELT/GDELT_Data/'
 fips_country_code = 'SU'
 
-def gdelt_connect():
+def gdelt_connect(anno_min, anno_max):
 
     # get the list of all the links on the gdelt file page
     page = requests.get(gdelt_base_url + 'index.html')
@@ -22,7 +22,7 @@ def gdelt_connect():
     link_list = doc.xpath("//*/ul/li/a/@href")
 
     # separate out those links that begin with four digits
-    file_list = [x for x in link_list if str.isdigit(x[0:4]) and (x[0:4]=='2015')]
+    file_list = [x for x in link_list if str.isdigit(x[0:4]) and (x[0:4]>= str(anno_min) and x[0:4] <=str(anno_max))]
     return file_list
 
 def gdelt_country(file_list):
@@ -65,7 +65,7 @@ def gdelt_country(file_list):
 def gdelt_pandas_conversion():
 
     # Get the GDELT field names from a helper file
-    colnames = pd.read_excel('CSV.header.fieldids.xlsx', sheetname='Sheet1',
+    colnames = pd.read_excel('../SPARC_GDELT/CSV.header.fieldids.xlsx', sheetname='Sheet1',
                              index_col='Column ID', parse_cols=1)['Field Name']
 
     # Build DataFrames from each of the intermediary files
@@ -90,29 +90,32 @@ def gdelt_pandas_conversion():
 
     return DF
 
-# lista_zip = gdelt_connect()
-# gdelt_country(lista_zip)
-# gdelt_pandas_conversion()
+anno_min = 2014
+anno_max = 2015
+
+#lista_zip = gdelt_connect(anno_min, anno_max)
+#for zip in lista_zip:
+#    print zip
+#gdelt_country(lista_zip)
+#gdelt_pandas_conversion()
+
 tabella_gdelt =  pd.io.pickle.read_pickle(local_path + 'results/' + 'backup' + fips_country_code + '.pickle')
-
 tabella_gdelt.to_csv("illo.csv")
-#print tabella_gdelt.describe()
+print tabella_gdelt.describe()
 
-df = tabella_gdelt[['Year','Actor1Name','Actor1Geo_FullName','Actor2Geo_Lat','Actor2Geo_Long']]
+df = tabella_gdelt[['Year', 'Actor1Name', 'Actor1Geo_FullName', 'Actor2Geo_Lat', 'Actor2Geo_Long']]
 df = df.dropna()
-#print df.head()
-
+print df.head()
 out_file = 'GDELT' + fips_country_code + '.shp'
 
 w = shapefile.Writer(shapefile.POINT)
 w.autoBalance = 1 #ensures geometry and attributes match
 w.field('id','F',15,0)
-
 for illo in range(0,len(df)):
-    coords = df.iloc[illo][3:5]
-    print df.index[illo],coords[0],coords[1]
-    w.point(float(coords[0]),float(coords[1]))
-    w.record(df.index[illo])
+     coords = df.iloc[illo][3:5]
+     print df.index[illo],coords[0],coords[1]
+     w.point(float(coords[0]),float(coords[1]))
+     w.record(df.index[illo])
 
 #Save shapefile
 w.save(out_file)

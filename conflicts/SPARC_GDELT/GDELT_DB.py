@@ -28,8 +28,8 @@ class DB(object):
 
         return paesi
 
-    def valori_amministrativi(self,db_cursore,paese_ricerca):
-        sql = "SELECT name,iso2,iso3 FROM sparc_wfp_countries WHERE name = '" + paese_ricerca + "';"
+    def codici_admin(self,db_cursore,paese_ricerca):
+        sql = "SELECT name,iso2,iso3,fips FROM sparc_wfp_countries WHERE name = '" + paese_ricerca + "';"
         db_cursore.execute(sql);
         risultati = db_cursore.fetchall()
 

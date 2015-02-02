@@ -24,6 +24,7 @@ class GDELT_Analysis(object):
             next(f)
             for raw_row in f:
                 row = raw_row.split("\t")
+                #print int(row[0][:4])
                 anno_corrente = int(row[0][:4])
                 if anno_corrente >= int(start) and anno_corrente <= int(end):
                     actor1 = row[1][:3]
@@ -46,7 +47,7 @@ class GDELT_Analysis(object):
             except:
                 pass
 
-        return point_counts,interaction_counts
+        return point_counts, interaction_counts
 
     def GDELTS_stat(self,point_counts):
 

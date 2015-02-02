@@ -9,7 +9,6 @@ import scipy.interpolate
 import scipy.optimize
 from scipy.interpolate import interp1d
 from scipy import interpolate
-import scipy.stats as stats
 
 dati_per_plot = {}
 dati_per_prob = {}

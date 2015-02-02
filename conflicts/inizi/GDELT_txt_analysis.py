@@ -23,6 +23,7 @@ def GDELT_subsetting(file_name, country, start, end):
         for raw_row in f:
             row = raw_row.split("\t")
             anno_corrente = int(row[0][:4])
+            print anno_corrente
             if anno_corrente >= int(start) and anno_corrente <= int(end):
                 #print raw_row
                 actor1 = row[1][:3]
@@ -89,6 +90,7 @@ def GDELT_maplot(point_counts):
     event_map.drawcountries()
     event_map.fillcontinents(color='0.8')  # Light gray
     event_map.drawmapboundary()
+
     # Draw the points on the map:
     for point, count in point_counts.iteritems():
         x, y = event_map(point[1], point[0])  # Convert lat, long to y,x
@@ -139,19 +141,66 @@ def GDELT_interactions_maplot():
 
     plt.show()
 
-# PATH = r"C:\data\tools\conflicts\GDELT_Data/"
-# last_gdelts_file = PATH + "GDELT.MASTERREDUCEDV2.txt"
-# COUNTRY = "SDN"
-# ANNO_init = 2012
-# ANNO_end = 2013
+PATH = "c:/data/tools/sparc/conflicts/SPARC_GDELT/test_data/"
+last_gdelts_file = PATH + "GDELT.MASTERREDUCEDV2.txt"
+test_file = PATH + "out.txt"
+COUNTRY = "SDN"
+ANNO_init = 2012
+ANNO_end = 2014
 
-# def main():
-# #     GDELT_fields(last_gdelts_file)
-#      print GDELT_subsetting(last_gdelts_file, COUNTRY, ANNO_init, ANNO_end)
-#      #GDELT_coords()
-#      #GDELTS_stat()
-#      #GDELT_maplot()
-#      #GDELT_interactions_maplot()
-#
-# if __name__ == "__main__":
-#      main()
+def file_len(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1
+
+def GDELT_splitting(file_name, country, start, end,n_righe):
+
+    sotto = 0
+    sopra = n_righe
+
+    fp = open(file_name)
+    next(fp)
+    for i, line in enumerate(fp):
+        anno_controllo_minimo = int(line.split("\t")[1][:4])
+        if i== 0 and start < anno_controllo_minimo:
+            print "Fuori range"
+            break
+        if i == 0:
+            anno_minimo = int(line.split("\t")[1][:4])
+        elif i == n_righe/2:
+            row = line.split("\t")
+            anno_corrente = int(row[1][:4])
+            if anno_corrente >= start:
+                sotto = 0
+                sopra = i
+            else:
+                sotto= n_righe/2
+                sopra = n_righe
+        # elif i == n_righe:
+        #     anno_massimo = int(line.split("\t")[1][:4])
+
+    fp.close()
+
+    return anno_minimo, sotto, sopra
+
+def main():
+
+    #n_righe = file_len(test_file)
+    #print("Ci sono %d linee di testo" % n_righe)
+
+    #anno_min,lim_inf,lim_sup = GDELT_splitting(test_file,COUNTRY, ANNO_init, ANNO_end, n_righe)
+    #print("Nel file l'anno minimo e' %d.\n L'anno di ricerca si trova tra le linee %d - %d" % (anno_min,lim_inf,lim_sup))
+
+    #GDELT_fields(last_gdelts_file)
+    #GDELT_subsetting(last_gdelts_file, COUNTRY, ANNO_init, ANNO_end)
+    data_store = GDELT_subsetting(test_file, COUNTRY, ANNO_init, ANNO_end)
+    punti = GDELT_coords(data_store)
+    print punti
+    #linee = calcolo.GDELT_coords(data_store)[1]
+    #print GDELTS_stat(punti)
+    GDELT_maplot(punti)
+    #GDELT_interactions_maplot()
+
+if __name__ == "__main__":
+     main()

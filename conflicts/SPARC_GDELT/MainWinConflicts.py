@@ -7,9 +7,11 @@ import ttk
 import tkFileDialog
 import os
 
+import GDELT_Fetch
 import GDELT_Analysis
 import GDELT_DB
 
+oggetto_url_gdelt = GDELT_Fetch.GDELT_Fetch()
 oggetto_gdelt = GDELT_Analysis.GDELT_Analysis()
 oggetto_db = GDELT_DB.DB()
 connessione = oggetto_db.db_connect()
@@ -19,12 +21,9 @@ class AppSPARConflicts:
 
     def __init__(self, master):
 
-        frame = Frame(master,height=32, width=550)
+        frame = Frame(master,height=32, width=820)
         frame.pack_propagate(0)
         frame.pack()
-
-        self.select_file = Button(frame, text="Get File",  fg="red", command = self.open_file_chooser)
-        self.select_file.pack(side=LEFT)
 
         self.box_value_country = StringVar()
         self.box_country = ttk.Combobox(frame, textvariable = [])
@@ -32,23 +31,50 @@ class AppSPARConflicts:
         self.box_country.pack(side=LEFT)
 
         self.box_value_minYear = StringVar()
-        self.box_minYear = ttk.Combobox(frame, textvariable = [])
-        self.box_minYear['values'] = ['2010', '2011','2012','2013','2014','2015']
+        self.box_minYear = ttk.Combobox(frame, textvariable= [])
+        self.box_minYear['values'] = ['2010', '2011', '2012', '2013', '2014', '2015']
         self.box_minYear.pack(side=LEFT)
 
         self.box_value_maxYear = StringVar()
         self.box_maxYear = ttk.Combobox(frame, textvariable = [])
-        self.box_maxYear['values'] = ['2010', '2011','2012','2013','2014','2015']
+        self.box_maxYear['values'] = ['2010', '2011', '2012', '2013', '2014', '2015']
         self.box_maxYear.pack(side=LEFT)
 
-        self.calcolo = Button(frame, text="Start", fg="red", command = self.subset_data)
+        self.iso_bbox = Button(frame, text="ISO-FIPS-BBOX", fg="blue", command = self.get_iso_bbox)
+        self.iso_bbox.pack(side=LEFT)
+
+        self.select_file = Button(frame, text="Get Data From URL",  fg="darkgreen", command = self.url_file_list)
+        self.select_file.pack(side=LEFT)
+
+        self.select_file = Button(frame, text="Get Data From File",  fg="darkgreen", command = self.open_file_chooser)
+        self.select_file.pack(side=LEFT)
+
+        self.calcolo = Button(frame, text="Start Analysis", fg="red", command = self.subset_data)
         self.calcolo.pack(side=LEFT)
 
-        #self.iso_bbox = Button(frame, text="Get ISO bbox", fg="green", command = self.get_iso_bbox)
-        #self.iso_bbox.pack(side=LEFT)
-
-        self.area_messaggi = Text(root, height=15, width=70, background="black", foreground="green")
+        self.area_messaggi = Text(root, height=15, width=100, background="black", foreground="green")
         self.area_messaggi.pack()
+
+    def get_iso_bbox(self):
+
+        paese_ricerca = self.box_country.get()
+        fips = oggetto_db.codici_admin(connessione,paese_ricerca)[0]['fips']
+        iso3 = oggetto_db.codici_admin(connessione,paese_ricerca)[0]['iso3']
+        bbox = oggetto_db.boundinbox_paese(connessione, paese_ricerca)
+        self.area_messaggi.insert(INSERT, str(iso3) + str(bbox) + str(fips) + "\n")
+
+        return bbox, iso3, fips
+
+    def url_file_list(self):
+
+        fips = self.get_iso_bbox()[2]
+        anno_min = self.box_minYear.get()
+        anno_max = self.box_maxYear.get()
+        lista_files = oggetto_url_gdelt.gdelt_connect(anno_min, anno_max)
+        self.area_messaggi.insert(INSERT, "Found %d files\n" % len(lista_files))
+
+        esito = oggetto_url_gdelt.gdelt_country(lista_files, fips)
+        self.area_messaggi.insert(INSERT, esito)
 
     def open_file_chooser(self):
 
@@ -65,18 +91,10 @@ class AppSPARConflicts:
         for i, col_name in enumerate(col_names):
              self.area_messaggi.insert(INSERT, col_name + "\n")
 
-    def get_iso_bbox(self, paese_ricerca):
-
-        iso3 = oggetto_db.valori_amministrativi(connessione,paese_ricerca)[0]['iso3']
-        bbox = oggetto_db.boundinbox_paese(connessione, paese_ricerca)
-        self.area_messaggi.insert(INSERT, str(iso3) + str(bbox) + "\n")
-
-        return bbox, iso3
-
     def subset_data(self):
 
         paese = self.box_country.get()
-        bbox,iso = self.get_iso_bbox(paese)
+        bbox, iso, fips = self.get_iso_bbox()
         anno_min = self.box_minYear.get()
         anno_max = self.box_maxYear.get()
         messaggio = "%s ISO %s between %s and %s \n" % (paese, iso, anno_min, anno_max)
@@ -86,7 +104,8 @@ class AppSPARConflicts:
         quanti_eventi = "There are %d cases %s-related records between %s and %s. " % (len(store_eventi), paese, anno_min, anno_max)
         self.area_messaggi.insert(INSERT, quanti_eventi + "\n")
 
-        coordinate = oggetto_gdelt.GDELT_coords(store_eventi)
+        coordinate = oggetto_gdelt.GDELT_coords(store_eventi)[0]
+
         #statistiche = oggetto_gdelt.GDELTS_stat(coordinate)
         #self.area_messaggi.insert(INSERT, statistiche + "\n")
 
