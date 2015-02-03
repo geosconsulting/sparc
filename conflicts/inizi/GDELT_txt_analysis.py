@@ -30,7 +30,6 @@ def GDELT_subsetting(file_name, country, start, end):
                 if actor1 == country:
                     #print actor1
                     data_store.append(raw_row)
-
     return data_store
 
 def GDELT_coords(data_store):

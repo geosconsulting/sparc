@@ -16,7 +16,7 @@ local_path = 'C:/data/tools/sparc/conflicts/SPARC_GDELT/GDELT_Data/'
 
 class GDELT_Fetch(object):
 
-    def gdelt_connect(self, anno_min, anno_max):
+    def gdelt_connect(self, data_minima, data_massima):
 
         # get the list of all the links on the gdelt file page
         page = requests.get(gdelt_base_url + 'index.html')
@@ -24,7 +24,7 @@ class GDELT_Fetch(object):
         link_list = doc.xpath("//*/ul/li/a/@href")
 
         # separate out those links that begin with four digits
-        file_list = [x for x in link_list if str.isdigit(x[0:4]) and (x[0:4]>= str(anno_min) and x[0:4] <= str(anno_max))]
+        file_list = [x for x in link_list if str.isdigit(x[0:8]) and (x[0:8]>= str(data_minima) and x[0:8] <= str(data_massima))]
 
         return file_list
 
@@ -93,7 +93,7 @@ class GDELT_Fetch(object):
 
         return DF
 
-    def convert_2_shapefile(self):
+    def convert_2_shapefile(self,fips_country_code):
         # lista_zip = gdelt_connect()
         # gdelt_country(lista_zip)
         # gdelt_pandas_conversion()

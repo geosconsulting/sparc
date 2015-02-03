@@ -6,6 +6,7 @@ from Tkinter import *
 import ttk
 import tkFileDialog
 import os
+import datetime
 
 import GDELT_Fetch
 import GDELT_Analysis
@@ -40,13 +41,16 @@ class AppSPARConflicts:
         self.box_maxYear['values'] = ['2010', '2011', '2012', '2013', '2014', '2015']
         self.box_maxYear.pack(side=LEFT)
 
-        self.iso_bbox = Button(frame, text="ISO-FIPS-BBOX", fg="blue", command = self.get_iso_bbox)
-        self.iso_bbox.pack(side=LEFT)
+        #self.iso_bbox = Button(frame, text="ISO BBOX FIPS", fg="blue", command = self.get_iso_bbox)
+        #self.iso_bbox.pack(side=LEFT)
 
-        self.select_file = Button(frame, text="Get Data From URL",  fg="darkgreen", command = self.url_file_list)
+        self.select_file = Button(frame, text="Weekly Trend",  fg="darkgreen", command = self.weekly_trend)
         self.select_file.pack(side=LEFT)
 
-        self.select_file = Button(frame, text="Get Data From File",  fg="darkgreen", command = self.open_file_chooser)
+        self.select_file = Button(frame, text="Monthly Trend",  fg="darkgreen", command = self.monthly_trend)
+        self.select_file.pack(side=LEFT)
+
+        self.select_file = Button(frame, text="Historical Records",  fg="red", command = self.open_file_chooser)
         self.select_file.pack(side=LEFT)
 
         self.calcolo = Button(frame, text="Start Analysis", fg="red", command = self.subset_data)
@@ -65,16 +69,46 @@ class AppSPARConflicts:
 
         return bbox, iso3, fips
 
-    def url_file_list(self):
+    def weekly_trend(self):
+
+        now = datetime.datetime.now()
+        meno_7 = datetime.timedelta(days=7)
+        mese_passato = now - meno_7
+        massimo = now.strftime("%Y%m%d")
+        minimo = mese_passato.strftime("%Y%m%d")
+        self.area_messaggi.insert(INSERT,"Between %s and %s" % (str(massimo), str(minimo)))
 
         fips = self.get_iso_bbox()[2]
-        anno_min = self.box_minYear.get()
-        anno_max = self.box_maxYear.get()
-        lista_files = oggetto_url_gdelt.gdelt_connect(anno_min, anno_max)
+        lista_files = oggetto_url_gdelt.gdelt_connect(minimo, massimo)
         self.area_messaggi.insert(INSERT, "Found %d files\n" % len(lista_files))
 
         esito = oggetto_url_gdelt.gdelt_country(lista_files, fips)
         self.area_messaggi.insert(INSERT, esito)
+
+        weekly_df = oggetto_url_gdelt.gdelt_pandas_conversion(fips)
+
+    def monthly_trend(self):
+
+        now = datetime.datetime.now()
+        meno_30 = datetime.timedelta(days=30)
+        mese_passato = now - meno_30
+        # giorno = now.day
+        # mese = now.month
+        # anno = now.year
+        massimo = now.strftime("%Y%m%d")
+        minimo = mese_passato.strftime("%Y%m%d")
+        self.area_messaggi.insert(INSERT,"Between %s and %s" % (str(massimo), str(minimo)))
+
+        fips = self.get_iso_bbox()[2]
+        # anno_min = self.box_minYear.get()
+        # anno_max = self.box_maxYear.get()
+        lista_files = oggetto_url_gdelt.gdelt_connect(minimo, massimo)
+        self.area_messaggi.insert(INSERT, "Found %d files\n" % len(lista_files))
+
+        esito = oggetto_url_gdelt.gdelt_country(lista_files, fips)
+        self.area_messaggi.insert(INSERT, esito)
+
+        montly_df = oggetto_url_gdelt.gdelt_pandas_conversion(fips)
 
     def open_file_chooser(self):
 
