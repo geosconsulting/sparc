@@ -56,8 +56,15 @@ class AppSPARConflicts:
         self.calcolo = Button(frame, text="Start Analysis", fg="red", command = self.subset_data)
         self.calcolo.pack(side=LEFT)
 
+        self.scrollbar = Scrollbar(root)
+        self.scrollbar.pack(side=RIGHT, fill=Y)
+
         self.area_messaggi = Text(root, height=15, width=100, background="black", foreground="green")
         self.area_messaggi.pack()
+
+        # attach listbox to scrollbar
+        self.area_messaggi.config(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.config(command=self.area_messaggi.yview)
 
     def get_iso_bbox(self):
 
@@ -86,6 +93,8 @@ class AppSPARConflicts:
         self.area_messaggi.insert(INSERT, esito)
 
         weekly_df = oggetto_url_gdelt.gdelt_pandas_conversion(fips)
+
+        self.area_messaggi.insert(INSERT, weekly_df)
 
     def monthly_trend(self):
 

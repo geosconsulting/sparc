@@ -182,6 +182,9 @@ def gdelt_country_chart_pandas(montly_df):
 
     print(montly_df.head(25))
 
+    #TODO: il campo e' convertito ma adesso devo fare riferimento alle date per plottare le serie
+    #TODO: e' solo un problema di indirizzare il campo date ma Pandas e' un casino in questo senso
+
     #monthly_events = pd.Series(montly_df.set_index('date'))
     #print monthly_events.head()
 
