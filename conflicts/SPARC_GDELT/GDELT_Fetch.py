@@ -115,14 +115,3 @@ class GDELT_Fetch(object):
 
         #Save shapefile
         w.save(out_file)
-
-
-
-
-
-
-
-
-
-
-

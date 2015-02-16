@@ -14,8 +14,8 @@ import GDELT_DB
 
 oggetto_url_gdelt = GDELT_Fetch.GDELT_Fetch()
 oggetto_gdelt = GDELT_Analysis.GDELT_Analysis()
-oggetto_db = GDELT_DB.DB()
-connessione = oggetto_db.db_connect()
+oggetto_db = GDELT_DB.GDELT_DB()
+connessione = oggetto_db.apri_connessione()
 paesi = oggetto_db.gather_paesi(connessione)
 
 class AppSPARConflicts:
@@ -69,8 +69,8 @@ class AppSPARConflicts:
     def get_iso_bbox(self):
 
         paese_ricerca = self.box_country.get()
-        fips = oggetto_db.codici_admin(connessione,paese_ricerca)[0]['fips']
-        iso3 = oggetto_db.codici_admin(connessione,paese_ricerca)[0]['iso3']
+        fips = oggetto_db.country_codes(connessione,paese_ricerca)[0]['fips']
+        iso3 = oggetto_db.country_codes(connessione,paese_ricerca)[0]['iso3']
         bbox = oggetto_db.boundinbox_paese(connessione, paese_ricerca)
         self.area_messaggi.insert(INSERT, str(iso3) + str(bbox) + str(fips) + "\n")
 

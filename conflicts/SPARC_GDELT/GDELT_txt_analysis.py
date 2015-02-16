@@ -9,6 +9,14 @@ data_store = []
 point_counts = defaultdict(int)
 interaction_counts = defaultdict(int)
 
+COUNTRY = "AFG"
+ANNO_init = 2012
+ANNO_end = 2014
+
+PATH = "c:/data/tools/sparc/conflicts/SPARC_GDELT/test_data/"
+last_gdelts_file = PATH + "GDELT.MASTERREDUCEDV2.txt"
+test_file = PATH + "out" + COUNTRY + ".txt"
+
 def GDELT_fields(file_name):
 
     with open(file_name) as f:
@@ -140,20 +148,14 @@ def GDELT_interactions_maplot():
 
     plt.show()
 
-PATH = "c:/data/tools/sparc/conflicts/SPARC_GDELT/test_data/"
-last_gdelts_file = PATH + "GDELT.MASTERREDUCEDV2.txt"
-test_file = PATH + "out.txt"
-COUNTRY = "SDN"
-ANNO_init = 2012
-ANNO_end = 2014
-
 def file_len(fname):
+
     with open(fname) as f:
         for i, l in enumerate(f):
             pass
     return i + 1
 
-def GDELT_splitting(file_name, country, start, end,n_righe):
+def GDELT_splitting(file_name, country, start, end, n_righe):
 
     sotto = 0
     sopra = n_righe
@@ -192,13 +194,13 @@ def main():
     #print("Nel file l'anno minimo e' %d.\n L'anno di ricerca si trova tra le linee %d - %d" % (anno_min,lim_inf,lim_sup))
 
     #GDELT_fields(last_gdelts_file)
-    #GDELT_subsetting(last_gdelts_file, COUNTRY, ANNO_init, ANNO_end)
-    data_store = GDELT_subsetting(test_file, COUNTRY, ANNO_init, ANNO_end)
-    punti = GDELT_coords(data_store)
-    print punti
+    GDELT_subsetting(last_gdelts_file, COUNTRY, ANNO_init, ANNO_end)
+    #data_store = GDELT_subsetting(test_file, COUNTRY, ANNO_init, ANNO_end)
+    #punti = GDELT_coords(data_store)
+    #print punti
     #linee = calcolo.GDELT_coords(data_store)[1]
     #print GDELTS_stat(punti)
-    GDELT_maplot(punti)
+    #GDELT_maplot(punti)
     #GDELT_interactions_maplot()
 
 if __name__ == "__main__":

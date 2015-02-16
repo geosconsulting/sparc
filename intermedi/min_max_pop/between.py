@@ -5,7 +5,7 @@ import collections
 import matplotlib.pyplot as plt
 import pylab
 import numpy as np
-import scipy.stats as sta
+import scipy.stats as ss
 import scipy.interpolate
 import scipy.optimize
 from scipy.interpolate import interp1d, splrep, splev
@@ -18,6 +18,8 @@ dati_per_plot = {}
 dati_per_prob = {}
 
 def plot_affected(people_rp):
+
+    print people_rp
 
     titolofinestra = "People Living in Flood Prone Areas"
 
@@ -75,13 +77,13 @@ def plot_risk_interpolation(dati_per_plot):
     # interpolations
     y0 = scipy.interpolate.interp1d(x, y, kind='nearest')
     y1 = scipy.interpolate.interp1d(x, y, kind='linear')
-    y2 = scipy.interpolate.interp1d(x, y, kind='cubic')
+    #y2 = scipy.interpolate.interp1d(x, y, kind='cubic')
 
     plt.grid(True)
     pylab.plot(x, y, 'o', label='Affected People')
     pylab.plot(xfine, y0(xfine), label='nearest')
     pylab.plot(xfine, y1(xfine), label='linear')
-    pylab.plot(xfine, y2(xfine), label='cubic')
+    #pylab.plot(xfine, y2(xfine), label='cubic')
 
     pylab.legend()
     pylab.xlabel('x')
@@ -230,23 +232,29 @@ def ordina_dati(persone_tempi_di_ritorno):
         y.append(y_corr)
         y_cum.append(valore)
         dizio_valori[x_corr] = y_corr, valore
-    return dizio_valori
+    return dizio_valori, x, y, y_cum
 
 def normpdf(x, mean, sd):
+
     var = float(sd)**2
     pi = 3.1415926
     denom = (2*pi*var)**.5
     num = math.exp(-(float(x)-float(mean))**2/(2*var))
     return num/denom
 
-def dizionario_to_pandas():
+def dizionario_to_pandas(dizio_valori_passato):
 
-    df_flood = pd.DataFrame(dizio_valori, index=['single', 'cumulated'])
+    df_flood = pd.DataFrame(dizio_valori_passato, index=['single', 'cumulated'])
     means = df_flood.mean(axis=1)
     stds = df_flood.std(axis=1)
     medians = df_flood.median(axis=1)
+    mins = df_flood.min(axis=1)
+    maxs = df_flood.max(axis=1)
+    min_cal = mins['cumulated']
+    max_cal = maxs['cumulated']
     mean_cal = means['cumulated']
     sd_cal = stds['cumulated']
+    return min_cal, max_cal, mean_cal, sd_cal
 
 def calcolo_pdf_manuale(dizio_e_caio):
 
@@ -259,16 +267,54 @@ def calcolo_pdf_manuale(dizio_e_caio):
     plt.plot(sorted(calcoli))
     plt.show()
 
+def area_under_curve(m, s, low, up):
+
+    def phi(z):
+        return 0.5 * (1.0 + math.erf(z/math.sqrt(2)))
+
+    # Calculate the probability for a range
+    # m = mean, s = stand dev, low = lower bound, up = upper bound
+    # for low = - infinity use low = None
+    # for up  = + infinity use up = None
+    def prob_phi(m, s, low, up):
+        s = float(s)
+
+        ur = phi((up - m)/s)  if not up == None else 1.0
+        lr = phi((low - m)/s) if not low == None else 0.0
+
+        return round(ur - lr, 4)
+
+    # # Tests
+    # print prob_phi(0, 1, -1.96, 1.96) == 0.95
+    # print round(prob_phi(0, 1 , -1, 1), 2) == 0.68
+    # print round(prob_phi(0, 1, -1, 0), 2) == 0.34
+    # print prob_phi(0,1,None, 0) == 0.5
+    # print prob_phi(0,1,0, None) == 0.5
+    # print prob_phi(0,1,None, None) == 1.0
+    #
+    # # Examples
+    print prob_phi(190, 36, 154, 226) #Returns the range between 154 and 226 = 0.683
+    # print prob_phi(190, 36, None, 118) #Returns the range between - infinity and 118 = 0.023
+    # print prob_phi(190, 36, 226, None) #Returns the range between 226 and + infininity = 0.159
+    # print prob_phi(190, 36, None, None) #Returns the range between - infinity and + infinity = 1.0
+
 p_rp = [(25, 1964), (50, 1532), (100, 9053), (200, 16710), (500, 1819), (1000, 153)]
 dizio_valori = ordina_dati(p_rp)
-dizionario_to_pandas()
+
+print dizio_valori[2]
+#minimo, massimo, media, deviazione_standard = dizionario_to_pandas(dizio_valori[2])
+#print minimo, massimo, media, deviazione_standard
+
+#print(area_under_curve(media, deviazione_standard, minimo, massimo))
 #calcolo_pdf_manuale(dizio_valori)
-dct_p_rp = plot_affected(dizio_valori)
+
+dct_p_rp = plot_affected(dizio_valori[0])
 dat_prob_plot = plot_risk_curve(dct_p_rp[1])
 plot_risk_interpolation(dat_prob_plot[0])
 rp_intermedi = interpolazione_tempi_ritorno_intermedi(dat_prob_plot[1])
 plot_risk_interpolation_linear(rp_intermedi[1])
 plot_risk_interpolation_linear_non_girato(rp_intermedi[1])
 calcolo_aree_grafici(dat_prob_plot[1])
+
 #normalizzatore(y)
 #curve_fitting_r2()

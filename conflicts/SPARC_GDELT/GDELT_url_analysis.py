@@ -12,6 +12,7 @@ import datetime as dt
 from collections import defaultdict
 import numpy as np
 import pandas as pd
+import scipy as sp
 import matplotlib.pyplot as plt
 
 gdelt_base_url = 'http://data.gdeltproject.org/events/'
@@ -19,21 +20,7 @@ local_path = '../SPARC_GDELT/GDELT_Data/'
 PATH = '../SPARC_GDELT/test_data/'
 file = 'out.txt'
 
-names = ['GLOBALEVENTID', 'SQLDATE', 'MonthYear', 'Year', 'FractionDate',
-'Actor1Code', 'Actor1Name', 'Actor1CountryCode', 'Actor1KnownGroupCode',
-'Actor1EthnicCode', 'Actor1Religion1Code', 'Actor1Religion2Code', 'Actor1Type1Code',
-'Actor1Type2Code','Actor1Type3Code','Actor2Code','Actor2Name','Actor2CountryCode',
-'Actor2KnownGroupCode','Actor2EthnicCode','Actor2Religion1Code','Actor2Religion2Code',
-'Actor2Type1Code','Actor2Type2Code','Actor2Type3Code','IsRootEvent','EventCode',
-'EventBaseCode','EventRootCode','QuadClass','GoldsteinScale','NumMentions',
-'NumSources','NumArticles','AvgTone','Actor1Geo_Type','Actor1Geo_FullName',
-'Actor1Geo_CountryCode','Actor1Geo_ADM1Code','Actor1Geo_Lat','Actor1Geo_Long',
-'Actor1Geo_FeatureID','Actor2Geo_Type','Actor2Geo_FullName','Actor2Geo_CountryCode',
-'Actor2Geo_ADM1Code','Actor2Geo_Lat','Actor2Geo_Long','Actor2Geo_FeatureID',
-'ActionGeo_Type','ActionGeo_FullName','ActionGeo_CountryCode','ActionGeo_ADM1Code',
-'ActionGeo_Lat','ActionGeo_Long','ActionGeo_FeatureID','DATEADDED','SOURCEURL']
-
-def gdelt_connect(anno_min, anno_max):
+def gdelt_day_month_year():
 
     # get the list of all the links on the gdelt file page
     page = requests.get(gdelt_base_url + 'index.html')
@@ -41,20 +28,23 @@ def gdelt_connect(anno_min, anno_max):
     link_list = doc.xpath("//*/ul/li/a/@href")
 
     # separate out those links that begin with four digits
-    file_list = [x for x in link_list if str.isdigit(x[0:4]) and (x[0:4]>= str(anno_min) and x[0:4] <=str(anno_max))]
-    return file_list
+    list_days = [x for x in link_list if len(x) == 23]
+    list_months = [x for x in link_list if len(x) == 10]
+    list_years = [x for x in link_list if len(x) == 8]
 
-def gdelt_connect_month(data_minima, data_massima):
+    return list_days, list_months, list_years
 
-        # get the list of all the links on the gdelt file page
-        page = requests.get(gdelt_base_url + 'index.html')
-        doc = lh.fromstring(page.content)
-        link_list = doc.xpath("//*/ul/li/a/@href")
+def gdelt_latest(data_minima, data_massima):
 
-        # separate out those links that begin with four digits
-        file_list = [x for x in link_list if str.isdigit(x[0:8]) and (x[0:8]>= str(data_minima) and x[0:8] <= str(data_massima))]
+    # get the list of all the links on the gdelt file page
+    page = requests.get(gdelt_base_url + 'index.html')
+    doc = lh.fromstring(page.content)
+    link_list = doc.xpath("//*/ul/li/a/@href")
 
-        return file_list
+    # separate out those links that begin with four digits
+    latest = [x for x in link_list if str.isdigit(x[0:8]) and (x[0:8]>= str(data_minima) and x[0:8] <= str(data_massima))]
+
+    return latest
 
 def gdelt_country(file_list,fips_country_code):
 
@@ -173,51 +163,58 @@ def gdelt_country_chart_txt_file(fips_country_code):
     #print monthly_data
     return monthly_data
 
-def gdelt_country_chart_pandas(montly_df):
+def gdelt_stat(tornanti):
 
-    mindata = montly_df['SQLDATE'].min()
-    maxdata = montly_df['SQLDATE'].max()
+    # Get some summary statistics
+    counts = np.array(tornanti.values())
+    #global counts_int
+    #counts_int = np.array(interaction_counts.values())
 
-    montly_df['date'] = pd.Series([pd.to_datetime(date) for date in montly_df['SQLDATE']], index= montly_df.index)
+    statistiche = {}
+    statistiche["Total points:"] = len(counts)
+    #statistiche["Total point-pairs:"] = len(counts_int)
+    statistiche["Min events:"] = counts.min()
+    statistiche["Max events:"] = counts.max()
+    statistiche["Mean events:"] = counts.mean()
+    statistiche["Median points:"] = np.median(counts)
+    return statistiche
 
-    print(montly_df.head(25))
+def gdelt_country_chart_pandas(returned_df):
 
-    #TODO: il campo e' convertito ma adesso devo fare riferimento alle date per plottare le serie
+    mindata = returned_df['SQLDATE'].min()
+    maxdata = returned_df['SQLDATE'].max()
+
+    returned_df['Date'] = pd.Series([pd.to_datetime(date) for date in returned_df['SQLDATE']],index= returned_df.index)
+    print returned_df.head()
+
+    #TODO: il campo e'convertito ma adesso devo fare riferimento alle date per plottare le serie
     #TODO: e' solo un problema di indirizzare il campo date ma Pandas e' un casino in questo senso
-
-    #monthly_events = pd.Series(montly_df.set_index('date'))
-    #print monthly_events.head()
-
-    #monthly_events.plot()
+    #montly_df['ActionGeo_Type'].hist(by=montly_df['date'])
     #plt.show()
+    bymonth = returned_df.groupby('Date')
+    bygroup_type = returned_df.groupby(['Date', 'ActionGeo_Type'])
+    print(bygroup_type.describe())
 
-######## CALCOLO TRA ANNI ########
-#anno_min = 2015
-#anno_max = 2015
-#lista_zip = gdelt_connect(anno_min, anno_max)
-#for zip in lista_zip:
-#     print zip
-#gdelt_country(lista_zip)
-#gdelt_pandas_conversion()
-#monthly_event = gdelt_country_chart("SU")
-#print monthly_event.head(20)
-#monthly_event.plot()
+######## CALCOLO ########
+giorni, mesi, anni = gdelt_day_month_year()
+print "Ci sono %d files giornalieri %d mensili e %d annuali" % (len(giorni), len(mesi), len(anni))
 
-######## CALCOLO ULTIMO MESE ########
-fips_country_code = 'SU'
+fips_country_code = 'AF'
 now = dt.datetime.now()
-meno_30 = dt.timedelta(days=3)
-mese_passato = now - meno_30
+meno_3 = dt.timedelta(days=3)
+mese_passato = now - meno_3
+
 massimo = now.strftime("%Y%m%d")
 minimo = mese_passato.strftime("%Y%m%d")
 print("Between %s and %s" % (str(massimo), str(minimo)))
 
-lista_files = gdelt_connect_month(minimo, massimo)
+lista_files = gdelt_latest(minimo, massimo)
 print("Found %d files\n" % len(lista_files))
 
-esito = gdelt_country(lista_files,fips_country_code)
-montly_df = gdelt_pandas_conversion(fips_country_code)
-gdelt_country_chart_pandas(montly_df)
+# esito = gdelt_country(lista_files, fips_country_code)
+# montly_df = gdelt_pandas_conversion(fips_country_code)
+# campi = list(montly_df.columns.values)
+# gdelt_country_chart_pandas(montly_df)
 
 # monthly_data = gdelt_country_chart_txt_file(fips_country_code)
 # monthly_events = pd.Series(monthly_data)
