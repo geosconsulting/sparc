@@ -1,7 +1,6 @@
 __author__ = 'fabio.lana'
 
 import psycopg2
-from psycopg2.extras import RealDictCursor
 
 class GDELT_DB(object):
 
@@ -87,7 +86,7 @@ class GDELT_DB(object):
                 codice_errore = laTabellaNonEsiste.pgcode
                 return descrizione_errore, codice_errore
 
-    def create_sparc_gdelt_table(self, table):
+    def create_sparc_gdelt_table_historic(self, table):
 
         SQL = "CREATE TABLE %s.%s %s %s"
         campi = """(
@@ -97,26 +96,26 @@ class GDELT_DB(object):
             monthyear character(6),
             year character(4),
             fractiondate double precision,
-            actor1code character(3),
+            actor1code character(6),
             actor1name character(255),
-            actor1countrycode character(3),
-            actor1knowngroupcode character(3),
-            actor1ethniccode character(3),
-            actor1religion1code character(3),
-            actor1religion2code character(3),
-            actor1type1code character(3),
-            actor1type2code character(3),
-            actor1type3code character(3),
-            actor2code character(3),
+            actor1countrycode character(6),
+            actor1knowngroupcode character(6),
+            actor1ethniccode character(6),
+            actor1religion1code character(6),
+            actor1religion2code character(6),
+            actor1type1code character(6),
+            actor1type2code character(6),
+            actor1type3code character(6),
+            actor2code character(6),
             actor2name character(255),
-            actor2countrycode character(3),
-            actor2knowngroupcode character(3),
-            actor2ethniccode character(3),
-            actor2religion1code character(3),
-            actor2religion2code character(3),
-            actor2type1code character(3),
-            actor2type2code character(3),
-            actor2type3code character(3),
+            actor2countrycode character(6),
+            actor2knowngroupcode character(6),
+            actor2ethniccode character(6),
+            actor2religion1code character(6),
+            actor2religion2code character(6),
+            actor2type1code character(6),
+            actor2type2code character(6),
+            actor2type3code character(6),
             isrootevent integer,
             eventcode character(4),
             eventbasecode character(4),
@@ -140,7 +139,7 @@ class GDELT_DB(object):
             actor2geo_adm1code character(4),
             actor2geo_lat double precision,
             actor2geo_long double precision,
-            ctor2geo_featureid integer,
+            actor2geo_featureid integer,
             actiongeo_type integer,
             actiongeo_fullname character(255),
             actiongeo_countrycode character(2),
@@ -162,21 +161,32 @@ class GDELT_DB(object):
             codice_errore = createErrore.pgcode
             return descrizione_errore, codice_errore
 
-    def inserisci_valori_calcolati(self):
+    def inserisci_valori_storici_gdelt(self, linea):
 
-        pass
-        # for linea in lista_finale:
-        #     inserimento = "INSERT INTO " + self.schema + ".sparc_population_month" + \
-        #                   " (iso3, adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name," \
-        #                   "rp,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,\"dec\", n_cases)" \
-        #                   "VALUES('" + str(linea[0]) + "','" + linea[1] + "'," + linea[2] + ",'" + linea[3] + "'," \
-        #                              + linea[4] + "," + linea[5] + ",'" + linea[6] + "'," + linea[7] + "," \
-        #                              + linea[8] + "," + linea[9] + "," + linea[10] + "," + linea[11] + "," \
-        #                              + linea[12] + "," + linea[13] + "," + linea[14] + "," + linea[15] + "," \
-        #                              + linea[16] + "," + linea[17] + "," + linea[18] + "," + linea[19] + "," \
-        #                              + linea[20] + ");"
-        #     #print inserimento
-        #     self.cur.execute(inserimento)
+        #for linea in listone:
+            print linea
+            inserimento = "INSERT INTO " + self.schema + ".sparc_gdelt_archive" + \
+                          " (globaleventid, sqldate,monthyear,year,fractiondate,actor1code,actor1name," \
+                          "actor1countrycode,actor1knowngroupcode,actor1ethniccode,actor1religion1code," \
+                          "actor1religion2code,actor1type1code,actor1type2code,actor1type3code,actor2code," \
+                          "actor2name,actor2countrycode,actor2knowngroupcode,actor2ethniccode,actor2religion1code,"\
+                          "actor2religion2code,actor2type1code,actor2type2code,actor2type3code,isrootevent,"\
+                          "eventcode,eventbasecode,eventrootcode,quadclass,goldsteinscale,nummentions,numsources,"\
+                          "numarticles,avgtone," \
+                          "actor1geo_type,actor1geo_fullname,actor1geo_countrycode,actor1geo_adm1code,actor1geo_lat,actor1geo_long,actor1geo_featureid,"\
+                          "actor2geo_type,actor2geo_fullname,actor2geo_countrycode,actor2geo_adm1code,actor2geo_lat,actor2geo_long,actor2geo_featureid,"\
+                          "actiongeo_type,actiongeo_fullname,actiongeo_countrycode,actiongeo_adm1code,actiongeo_lat,actiongeo_long,actiongeo_featureid,"\
+                          "dateadded)" \
+                          "VALUES('" + linea[0] + "','" + linea[1] + "'," + linea[2] + "," + linea[3] + "," + linea[4] + ",'" + linea[5] + "','" + linea[6] + "','" + linea[7] + "','" \
+                                     + linea[8] + "','" + linea[9] + "','" + linea[10] + "','" + linea[11] + "','" + linea[12] + "','" + linea[13] + "','" + linea[14] + "','" + linea[15] + "','" \
+                                     + linea[16] + "','" + linea[17] + "','" + linea[18] + "','" + linea[19] + "','" + linea[20] + "','" + linea[21] + "','" + linea[22] + "','" + linea[23] + "','" \
+                                     + linea[24] + "'," + linea[25] + "," + linea[26] + "," + linea[27] + "," + linea[28] + "," + linea[29] + "," + linea[30] + "," + linea[31] + "," \
+                                     + linea[32] + "," + linea[33] + "," + linea[34] + ",'" + linea[35] + "','" + linea[36] + "','" + linea[37] + "','" + linea[38] + "'," + linea[39] + "," \
+                                     + linea[40] + "," + linea[41] + ",'" + linea[42] + "','" + linea[43] + "','" + linea[44] + "','" + linea[45] + "'," + linea[46] + "," + linea[47] + "," \
+                                     + linea[48] + ",'" + linea[49] + "','" + linea[50] + "','" + linea[51] + "','" + linea[52] + "'," + linea[53] + "," + linea[54] + ",'" + linea[55] + "'," \
+                                     + str(int(linea[56])).replace('\n','') + ");"
+            print inserimento
+            self.db_cursore.execute(inserimento)
 
     def salva_cambi(self):
 
@@ -186,35 +196,35 @@ class GDELT_DB(object):
         except psycopg2.Error as createErrore:
             print createErrore.pgerror
 
-host = 'localhost'
-schema = 'public'
-dbname = 'geonode-imports'
-user = 'geonode'
-password = 'geonode'
-table = 'sparc_gdelt_archive'
-
-objDB = GDELT_DB(host, schema, dbname, user, password)
-
-objDB.apri_connessione()
-paesi = objDB.gather_paesi()
-objDB.chiudi_connessione()
-
-objDB.apri_connessione()
-admin = objDB.country_codes('Sudan')[0]
-objDB.chiudi_connessione()
-
-objDB.apri_connessione()
-bbox = objDB.boundinbox_paese('Sudan')
-objDB.chiudi_connessione()
-
-objDB.apri_connessione()
-controllo = objDB.check_tabella('sparc_gdelt_archive')
-objDB.chiudi_connessione()
-
-if controllo[1] == '42P01':
-     objDB.apri_connessione()
-     objDB.create_sparc_gdelt_table(table)
-     objDB.salva_cambi()
-     objDB.chiudi_connessione()
-else :
-    pass
+# host = 'localhost'
+# schema = 'public'
+# dbname = 'geonode-imports'
+# user = 'geonode'
+# password = 'geonode'
+# table = 'sparc_gdelt_archive'
+#
+# objDB = GDELT_DB(host, schema, dbname, user, password)
+#
+# objDB.apri_connessione()
+# paesi = objDB.gather_paesi()
+# objDB.chiudi_connessione()
+#
+# objDB.apri_connessione()
+# admin = objDB.country_codes('Sudan')[0]
+# objDB.chiudi_connessione()
+#
+# objDB.apri_connessione()
+# bbox = objDB.boundinbox_paese('Sudan')
+# objDB.chiudi_connessione()
+#
+# objDB.apri_connessione()
+# controllo = objDB.check_tabella('sparc_gdelt_archive')
+# objDB.chiudi_connessione()
+#
+# if controllo[1] == '42P01':
+#     objDB.apri_connessione()
+#     objDB.create_sparc_gdelt_table_historic(table)
+#     objDB.salva_cambi()
+#     objDB.chiudi_connessione()
+# else :
+#     pass

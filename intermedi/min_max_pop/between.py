@@ -276,10 +276,12 @@ def area_under_curve(m, s, low, up):
     # m = mean, s = stand dev, low = lower bound, up = upper bound
     # for low = - infinity use low = None
     # for up  = + infinity use up = None
+
     def prob_phi(m, s, low, up):
+
         s = float(s)
 
-        ur = phi((up - m)/s)  if not up == None else 1.0
+        ur = phi((up - m)/s) if not up == None else 1.0
         lr = phi((low - m)/s) if not low == None else 0.0
 
         return round(ur - lr, 4)

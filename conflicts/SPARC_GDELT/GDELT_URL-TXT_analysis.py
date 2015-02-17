@@ -15,6 +15,8 @@ import pandas as pd
 import scipy as sp
 import matplotlib.pyplot as plt
 
+import GDELT_DB as gdb
+
 gdelt_base_url = 'http://data.gdeltproject.org/events/'
 local_path = '../SPARC_GDELT/GDELT_Data/'
 PATH = '../SPARC_GDELT/test_data/'
@@ -78,6 +80,40 @@ def gdelt_country(file_list,fips_country_code):
                         outfile.write(line)
                 outfilecounter +=1
 
+            # delete the temporary file
+            os.remove(infile_name)
+        infilecounter +=1
+    print 'done'
+
+    return infilecounter
+
+def gdelt_years(file_list):
+
+    infilecounter = 0
+    outfilecounter = 0
+
+    for compressed_file in file_list[infilecounter:]:
+        print compressed_file,
+
+        # if we dont have the compressed file stored locally, go get it. Keep trying if necessary.
+        while not os.path.isfile(local_path + compressed_file):
+            print 'downloading,',
+            urllib.urlretrieve(url= gdelt_base_url + compressed_file,
+                               filename=local_path + compressed_file)
+
+        # extract the contents of the compressed file to a temporary directory
+        print 'extracting,',
+        z = zipfile.ZipFile(file=local_path + compressed_file, mode='r')
+        z.extractall(path= local_path + 'tmp/')
+
+        # parse each of the csv files in the working directory,
+        print 'parsing,',
+        for infile_name in glob.glob(local_path + 'tmp/*'):
+            with open(infile_name, mode='r') as infile:
+                for line in infile:
+                    # extract lines with our interest country code
+                    print line
+                outfilecounter +=1
             # delete the temporary file
             os.remove(infile_name)
         infilecounter +=1
@@ -195,21 +231,97 @@ def gdelt_country_chart_pandas(returned_df):
     bygroup_type = returned_df.groupby(['Date', 'ActionGeo_Type'])
     print(bygroup_type.describe())
 
+def GDELT_fields(file_name):
+
+    lista_corrente = []
+
+    with open(file_name) as f:
+        col_names = f.readline().split("\t")
+
+    for campo in col_names:
+        lista_corrente.append(campo.replace("\n",""))
+
+    return lista_corrente
+
 ######## CALCOLO ########
+headers_daily = "CSV.header.dailyupdates.txt"
+headers_historical = "CSV.header.historical.txt"
+
+lst_storica = GDELT_fields(headers_historical)
+lst_giornaliera = GDELT_fields(headers_daily)
+
+print("La lista storica ha %d campi mentre la giornaliera ha %d campi" % (len(lst_storica),len(lst_giornaliera)))
+mancante = (list(set(lst_giornaliera) - set(lst_storica)))
+print("Il campo mancante in storica e' %s" % mancante[0])
+
 giorni, mesi, anni = gdelt_day_month_year()
 print "Ci sono %d files giornalieri %d mensili e %d annuali" % (len(giorni), len(mesi), len(anni))
+#gdelt_years(anni)
 
-fips_country_code = 'AF'
-now = dt.datetime.now()
-meno_3 = dt.timedelta(days=3)
-mese_passato = now - meno_3
+def GDELT_subsetting(file_name):
 
-massimo = now.strftime("%Y%m%d")
-minimo = mese_passato.strftime("%Y%m%d")
-print("Between %s and %s" % (str(massimo), str(minimo)))
+    data_store = []
 
-lista_files = gdelt_latest(minimo, massimo)
-print("Found %d files\n" % len(lista_files))
+    conteggio = 0
+    with open(file_name) as f:
+        for raw_row in f:
+            #print raw_row
+            row_clean = ["" if k == "'" else k for k in raw_row]
+            for row_temp in row_clean:
+                row = row_temp.split("\t")
+                data_store.append(row)
+                conteggio += 1
+
+    return data_store, conteggio
+
+PATH = "c:/data/tools/sparc/conflicts/SPARC_GDELT/test_data/"
+
+#57 campi
+annual_gdelts_file = PATH + "1979.csv"
+monthly_gdelts_file = PATH + "200901.csv"
+
+#58 campi
+daily_gdelts_file = PATH + "20150106.export.csv"
+
+
+colnames = pd.read_excel('../SPARC_GDELT/CSV.header.fieldids_hist.xlsx', sheetname='Sheet1',
+                             index_col='Column ID', parse_cols=1)['Field Name']
+
+# Build DataFrames from each of the intermediary files
+DF_annuale = pd.read_csv(annual_gdelts_file, sep='\t', header=None, dtype=str, names=colnames, index_col=['GLOBALEVENTID'])
+print DF_annuale.describe()
+#records, numero_records = GDELT_subsetting(annual_gdelts_file)
+# listone_raw = [x for x in records]
+# listone = []
+# for lilla in listone_raw:
+#     illo = ["0" if len(k) == 0 else k for k in lilla]
+#     listone.append(illo)
+
+host = 'localhost'
+schema = 'public'
+dbname = 'geonode-imports'
+user = 'geonode'
+password = 'geonode'
+table = 'sparc_gdelt_archive'
+
+objDB = gdb.GDELT_DB(host, schema, dbname, user, password)
+
+# for illo in range(0, 5):
+#     valori = [x for x in records[illo]]
+#     print valori
+#     #print records[illo][1]
+
+# fips_country_code = 'AF'
+# now = dt.datetime.now()
+# meno_3 = dt.timedelta(days=3)
+# mese_passato = now - meno_3
+#
+# massimo = now.strftime("%Y%m%d")
+# minimo = mese_passato.strftime("%Y%m%d")
+# print("Between %s and %s" % (str(massimo), str(minimo)))
+
+# lista_files = gdelt_latest(minimo, massimo)
+# print("Found %d files\n" % len(lista_files))
 
 # esito = gdelt_country(lista_files, fips_country_code)
 # montly_df = gdelt_pandas_conversion(fips_country_code)
