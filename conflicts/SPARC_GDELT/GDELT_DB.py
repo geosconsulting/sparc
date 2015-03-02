@@ -1,6 +1,8 @@
 __author__ = 'fabio.lana'
 
 import psycopg2
+import pandas as pd
+from sqlalchemy import create_engine
 
 class GDELT_DB(object):
 
@@ -196,35 +198,34 @@ class GDELT_DB(object):
         except psycopg2.Error as createErrore:
             print createErrore.pgerror
 
-# host = 'localhost'
-# schema = 'public'
-# dbname = 'geonode-imports'
-# user = 'geonode'
-# password = 'geonode'
-# table = 'sparc_gdelt_archive'
-#
-# objDB = GDELT_DB(host, schema, dbname, user, password)
-#
-# objDB.apri_connessione()
-# paesi = objDB.gather_paesi()
-# objDB.chiudi_connessione()
-#
-# objDB.apri_connessione()
-# admin = objDB.country_codes('Sudan')[0]
-# objDB.chiudi_connessione()
-#
-# objDB.apri_connessione()
-# bbox = objDB.boundinbox_paese('Sudan')
-# objDB.chiudi_connessione()
-#
-# objDB.apri_connessione()
-# controllo = objDB.check_tabella('sparc_gdelt_archive')
-# objDB.chiudi_connessione()
-#
-# if controllo[1] == '42P01':
-#     objDB.apri_connessione()
-#     objDB.create_sparc_gdelt_table_historic(table)
-#     objDB.salva_cambi()
-#     objDB.chiudi_connessione()
-# else :
-#     pass
+    def depickle_pandas_historical(self,paese):
+
+        local_path = 'C:/data/tools/sparc/conflicts/SPARC_GDELT/test_data/results/'
+        filolo = local_path + paese + '.pickle'
+        file_pickle = pd.io.pickle.read_pickle(filolo)
+        lunghezza =len(file_pickle)
+
+        d = {}
+        for numerico in range(0,lunghezza):
+            lina = file_pickle[0][numerico]
+            lina_split = lina.split("\t")
+            #print lina_split
+            altri = lina_split[1:]
+            aggiunta = [x for x in altri]
+            d[lina_split[0]] = aggiunta
+        df = pd.DataFrame(data=d)
+
+
+        #print type(df)
+        d_trans = df.transpose()
+        d_trans.columns = ['iso','actor1','type','id1','id2','id3','id4','id5','id6','id7','id8','id9','id10','id11','id12','id13']
+
+        print d_trans.head()
+
+        engine = create_engine(r'postgresql://geonode:geonode@localhost/geonode-imports')
+
+        connection = engine.connect()
+        d_trans.to_sql('gd_' + str(paese), engine, schema='conflicts', chunksize=1000)
+        connection.close()
+
+        return d_trans

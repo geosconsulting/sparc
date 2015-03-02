@@ -11,8 +11,13 @@ import pandas as pd
 import shapefile
 
 gdelt_base_url = 'http://data.gdeltproject.org/events/'
-local_path = 'C:/data/tools/sparc/conflicts/SPARC_GDELT/GDELT_Data/'
+local_path = 'C:/data/tools/sparc/conflicts/SPARC_GDELT/test_data/'
 #fips_country_code = 'SU'
+
+url_files = gdelt_base_url
+down_files = local_path + 'down/'
+temp_files = local_path + 'tmp/'
+country_files = local_path + 'country/'
 
 class GDELT_Fetch(object):
 
@@ -24,32 +29,34 @@ class GDELT_Fetch(object):
         link_list = doc.xpath("//*/ul/li/a/@href")
 
         # separate out those links that begin with four digits
-        file_list = [x for x in link_list if str.isdigit(x[0:8]) and (x[0:8]>= str(data_minima) and x[0:8] <= str(data_massima))]
+        file_list = [x for x in link_list if str.isdigit(x[0:4]) and (x[0:4] >= str(data_minima) and x[0:4] <= str(data_massima))]
 
         return file_list
 
-    def gdelt_country(self, file_list, fips_country_code):
+    def gdelt_fetch(self, file_list, fips_country_code):
 
         infilecounter = 0
         outfilecounter = 0
 
         for compressed_file in file_list[infilecounter:]:
+
             print compressed_file,
+
             # if we dont have the compressed file stored locally, go get it. Keep trying if necessary.
-            while not os.path.isfile(local_path + compressed_file):
+            while not os.path.isfile(down_files + compressed_file):
                 print 'downloading,',
-                urllib.urlretrieve(url= gdelt_base_url + compressed_file,
-                                   filename = local_path + compressed_file)
+                urllib.urlretrieve(url=url_files + compressed_file,
+                                   filename=down_files + compressed_file)
 
             # extract the contents of the compressed file to a temporary directory
             print 'extracting,',
-            z = zipfile.ZipFile(file= local_path + compressed_file, mode='r')
-            z.extractall(path= local_path + 'tmp/')
+            z = zipfile.ZipFile(file=down_files + compressed_file, mode='r')
+            z.extractall(path=temp_files)
 
             # parse each of the csv files in the working directory,
             print 'parsing,',
-            for infile_name in glob.glob(local_path + 'tmp/*'):
-                outfile_name = local_path + 'country/' + fips_country_code + '%04i.tsv' % outfilecounter
+            for infile_name in glob.glob(temp_files + '/*'):
+                outfile_name = country_files + fips_country_code + '%04i.tsv' % outfilecounter
                 print outfile_name
                 # open the infile and outfile
                 with open(infile_name, mode='r') as infile, open(outfile_name, mode='w') as outfile:
@@ -60,20 +67,24 @@ class GDELT_Fetch(object):
                     outfilecounter += 1
 
                 # delete the temporary file
-            os.remove(infile_name)
+                os.remove(infile_name)
             infilecounter += 1
+
+        files_zips = glob.glob(local_path + 'down' + '*.zip')
+        for active_zip in files_zips:
+            os.remove(active_zip)
 
         return 'done'
 
-    def gdelt_pandas_conversion(self,fips_country_code):
+    def gdelt_pandas_conversion(self, fips_country_code):
 
         # Get the GDELT field names from a helper file
         colnames = pd.read_excel('CSV.header.fieldids.xlsx', sheetname='Sheet1',
                                  index_col='Column ID', parse_cols=1)['Field Name']
 
         # Build DataFrames from each of the intermediary files
-        files = glob.glob(local_path + 'country/'+ fips_country_code + '*')
-        files_zips = glob.glob(local_path + '*.zip')
+        files = glob.glob(local_path + 'country/' + fips_country_code + '*')
+        files_zips = glob.glob(local_path + 'country/' + '*.zip')
         DFlist = []
         for active_file in files:
             print active_file
@@ -82,7 +93,7 @@ class GDELT_Fetch(object):
 
         # Merge the file-based dataframes and save a pickle
         DF = pd.concat(DFlist)
-        DF.to_pickle(local_path + 'results/' + 'backup' + fips_country_code + '.pickle')
+        DF.to_pickle(local_path + 'results/' + 'current_' + fips_country_code + '.pickle')
 
         # once everything is safely stored away, remove the temporary files
         for active_file in files:
@@ -94,11 +105,12 @@ class GDELT_Fetch(object):
         return DF
 
     def convert_2_shapefile(self,fips_country_code):
+
         # lista_zip = gdelt_connect()
         # gdelt_country(lista_zip)
         # gdelt_pandas_conversion()
         tabella_gdelt = pd.io.pickle.read_pickle(local_path + 'results/' + 'backup' + fips_country_code + '.pickle')
-        tabella_gdelt.to_csv("illo.csv")
+        #tabella_gdelt.to_csv("illo.csv")
         # print tabella_gdelt.describe()
         df = tabella_gdelt[['Year', 'Actor1Name', 'Actor1Geo_FullName', 'Actor2Geo_Lat', 'Actor2Geo_Long']]
         df = df.dropna()

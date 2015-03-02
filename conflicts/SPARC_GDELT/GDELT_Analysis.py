@@ -18,19 +18,22 @@ class GDELT_Analysis(object):
 
         return col_names
 
-    def GDELT_subsetting(self,file_name, country, start, end):
+    def GDELT_subsetting(self, file_name, country, start, end):
 
         with open(file_name) as f:
             next(f)
-            for raw_row in f:
-                row = raw_row.split("\t")
-                #print int(row[0][:4])
-                anno_corrente = int(row[0][:4])
+            for line in f:
+                line = line.replace('\n', '')
+                #print line
+                split = line.split('\t')
+                #print split
+                anno_corrente = int(split[0][:4])
+                #print anno_corrente
                 if anno_corrente >= int(start) and anno_corrente <= int(end):
-                    actor1 = row[1][:3]
+                    actor1 = split[1][:3]
+                    #print actor1
                     if actor1 == country:
-                        data_store.append(raw_row)
-
+                        data_store.append(line)
         return data_store
 
     def GDELT_coords(self,data_store):
@@ -67,8 +70,8 @@ class GDELT_Analysis(object):
 
     def GDELT_maplot(self, point_counts, centro_lat, centro_lon, llat, llon, ulat, ulon): #,centro_lat,centro_lon,llat,llon,ulat,ulon):
 
-        print point_counts
-        print centro_lat, centro_lon, llat, llon, ulat, ulon
+        # print point_counts
+        # print centro_lat, centro_lon, llat, llon, ulat, ulon
 
         def get_size(count):
             ''' Convert a count to a point size. Log-scaled.'''
@@ -101,7 +104,7 @@ class GDELT_Analysis(object):
 
         plt.show()
 
-    def SOLO_maplot(self,centro_lat,centro_lon,llat,llon,ulat,ulon):
+    def SOLO_maplot(self, centro_lat, centro_lon, llat, llon, ulat, ulon):
 
         # Note that we're drawing on a regular matplotlib figure, so we set the
         # figure size just like we would any other.
@@ -159,18 +162,3 @@ class GDELT_Analysis(object):
                 event_map.drawgreatcircle(x1, y1, x2, y2, linewidth=2,color='r', alpha=line_alpha)
         plt.show()
 
-# PATH = r"C:\data\tools\conflicts\GDELT_Data/"
-# last_gdelts_file = PATH + "GDELT.MASTERREDUCEDV2.txt"
-# COUNTRY = "SDN"
-# ANNO_init = 2011
-# ANNO_end = 2014
-#
-# calcolo = GDELT_Analysis()
-# #print calcolo.GDELT_fields(last_gdelts_file)
-# data_store = calcolo.GDELT_subsetting(last_gdelts_file, COUNTRY, ANNO_init, ANNO_end)
-# punti = calcolo.GDELT_coords(data_store)[0]
-# linee = calcolo.GDELT_coords(data_store)[1]
-# print linee
-# print calcolo.GDELTS_stat(punti)
-# calcolo.GDELT_maplot(punti)
-# #calcolo.GDELT_interactions_maplot(linee)
