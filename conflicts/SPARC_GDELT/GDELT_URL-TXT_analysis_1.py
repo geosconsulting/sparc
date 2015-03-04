@@ -257,12 +257,13 @@ def depickle_pandas_current(fips):
         colnames = pd.read_excel('CSV.header.fieldids.xlsx', sheetname='Sheet1',
                                  index_col='Column ID', parse_cols=1)['Field Name']
 
-        df = pd.DataFrame(data= file_pickle, columns=colnames)
+        #df = pd.DataFrame(data= file_pickle, columns=colnames)
+        df = pd.DataFrame(data= file_pickle)
 
         engine = create_engine(r'postgresql://geonode:geonode@localhost/geonode-imports')
 
         connection = engine.connect()
-        df.to_sql('gd_' + str(fips), engine, schema='conflicts', chunksize=1000)
+        df.to_sql('gd_' + str(fips), engine, schema='conflicts', chunksize=1000,if_exists='append')
         connection.close()
 
         return df
@@ -307,7 +308,7 @@ def main():
     pass
     ######## PICKLE CREATI CON INTERFACCIA ########
     #depickle_pandas('South Sudan')
-    #depickle_pandas_current('KG')
+    #depickle_pandas_current('OD')
 
     #print depickle_pandas('Kyrgyzstan')[0][0]
     #print depickle_pandas('Kyrgyzstan')[12]
@@ -340,16 +341,19 @@ def main():
     ############## CHARTARE I DATI ###############
     #chart_from_masterReduced()
 
-ritornati = analizziamo_dati()
-ritornati['data_conv'] = pd.Series([pd.to_datetime(date) for date in ritornati['SQLDATE']], index=ritornati.index)
-ritornati['mesi'] = ritornati['MonthYear'].str[4:]
+if __name__ == "__main__":
+    main()
 
-print ritornati.head()
-#print ritornati.mesi.head()
-
-ts = pd.Series(ritornati['ActionGeo_Type'])
-print ts.head()
-
-raggruppati = ritornati.groupby('mesi').count()
-ts1= raggruppati['ActionGeo_Type']
-print ts1
+# ritornati = analizziamo_dati()
+# ritornati['data_conv'] = pd.Series([pd.to_datetime(date) for date in ritornati['SQLDATE']], index=ritornati.index)
+# ritornati['mesi'] = ritornati['MonthYear'].str[4:]
+#
+# print ritornati.head()
+# #print ritornati.mesi.head()
+#
+# ts = pd.Series(ritornati['ActionGeo_Type'])
+# print ts.head()
+#
+# raggruppati = ritornati.groupby('mesi').count()
+# ts1= raggruppati['ActionGeo_Type']
+# print ts1

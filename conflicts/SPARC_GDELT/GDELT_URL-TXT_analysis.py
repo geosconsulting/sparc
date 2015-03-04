@@ -283,7 +283,6 @@ monthly_gdelts_file = PATH + "200901.csv"
 #58 campi
 daily_gdelts_file = PATH + "20150106.export.csv"
 
-
 colnames = pd.read_excel('../SPARC_GDELT/CSV.header.fieldids_hist.xlsx', sheetname='Sheet1',
                              index_col='Column ID', parse_cols=1)['Field Name']
 
