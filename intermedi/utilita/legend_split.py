@@ -36,7 +36,7 @@ def apri_connessione():
     try:
         db_connessione = psycopg2.connect(connection_string)
         db_cursore = db_connessione.cursor()
-        print("Connessione attiva")
+        #print("Connessione attiva")
     except:
         print("No connection")
 
@@ -100,7 +100,7 @@ for vallo in array_values[0]:
 maximo = max(tutte_somme)
 minimo = min(tutte_somme)
 
-print minimo, maximo
+print "Minimo %d Massimo %d" % (minimo, maximo)
 
 lower_treshold = 100
 upper_treshold = 15000
@@ -116,7 +116,7 @@ intermediate = []
 for mover in range(1, 4):
     intermediate.append(tertile*mover)
 
-print intermediate
+print "Second split %d third split %d fourth split %d" % (intermediate[0],intermediate[1],intermediate[2])
 
 print "First class - Less than %d (%d)" % (less_than,minimo)
 print "Second class between %d and %d" % (less_than, intermediate[0])
