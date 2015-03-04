@@ -97,17 +97,23 @@ for vallo in array_values[0]:
     tramo = vallo[1:]
     tutte_somme.append(sum(tramo))
 
-maximo = max(tutte_somme)
 minimo = min(tutte_somme)
+maximo = max(tutte_somme)
 
-print "Minimo %d Massimo %d" % (minimo, maximo)
+print "Min %d Max %d" % (minimo, maximo)
 
 lower_treshold = 100
-upper_treshold = 15000
+if maximo>10000:
+    upper_treshold = 10000
+elif maximo>10000 and maximo< 50000:
+    upper_treshold = 50000
+
+print "Low %d High %d Tresholds" % (lower_treshold, upper_treshold)
+
 less_than = minimo + lower_treshold
 more_than = maximo - upper_treshold
 interval = more_than - less_than
-print "Intervallo %d" % interval
+print "Interval %d" % interval
 
 tertile = interval/4
 print "Tertile %d" % tertile
@@ -117,9 +123,8 @@ for mover in range(1, 4):
     intermediate.append(tertile*mover)
 
 print "Second split %d third split %d fourth split %d" % (intermediate[0],intermediate[1],intermediate[2])
-
 print "First class - Less than %d (%d)" % (less_than,minimo)
-print "Second class between %d and %d" % (less_than, intermediate[0])
+print "Second class between %d and %d" % (less_than,intermediate[0])
 print "Third class between %d and %d" % (intermediate[0],intermediate[1])
 print "Fourth class between %d and %d" % (intermediate[1],intermediate[2])
 print "Last class - More than %d (%d)" % (more_than, maximo)
