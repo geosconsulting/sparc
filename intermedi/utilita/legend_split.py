@@ -1,6 +1,21 @@
 __author__ = 'fabio.lana'
 
-import itertools
+arrAnn = [('5890', 7, 0, 0, 0, 0, 0),
+          ('5909', 161, 13, 21, 104, 2, 0),
+          ('5921', 528, 3, 0, 0, 0, 0),
+          ('5901', 5, 0, 3, 3, 0, 0),
+          ('5926', 15, 0, 0, 0, 0, 0),
+          ('5936', 102, 1, 2, 1, 2, 1),
+          ('5893', 13, 0, 0, 0, 0, 0),
+          ('5888', 1, 0, 0, 0, 0, 0),
+          ('5900', 48, 0, 2, 2, 2, 0),
+          ('5904', 17, 0, 0, 0, 0, 0),
+          ('5916', 147, 63, 48, 3, 0, 2),
+          ('5879', 102, 1, 0, 0, 10, 1),
+          ('5915', 31, 0, 2, 0, 70, 0),
+          ('5933', 44, 0, 0, 1, 0, 0),
+          ('5873', 7, 0, 0, 0, 0, 0),
+          ('5896', 132, 0, 0, 0, 1, 1)]
 
 def connessione_sqlalchemy():
 
@@ -67,32 +82,15 @@ def chiudi_connessione(db_cursore,db_connessione):
     except:
         print "Problem in closing the connection"
 
+paese = 'Bolivia'
 conn, cur = apri_connessione()
-array_values = gather_data(cur, 'India')
-#print "Numero di records in Benin %d" % len(array_values[0])
-#print array_values[0]
-
-arrAnn = [('5890', 7, 0, 0, 0, 0, 0),
-          ('5909', 161, 13, 21, 104, 2, 0),
-          ('5921', 528, 3, 0, 0, 0, 0),
-          ('5901', 5, 0, 3, 3, 0, 0),
-          ('5926', 15, 0, 0, 0, 0, 0),
-          ('5936', 102, 1, 2, 1, 2, 1),
-          ('5893', 13, 0, 0, 0, 0, 0),
-          ('5888', 1, 0, 0, 0, 0, 0),
-          ('5900', 48, 0, 2, 2, 2, 0),
-          ('5904', 17, 0, 0, 0, 0, 0),
-          ('5916', 147, 63, 48, 3, 0, 2),
-          ('5879', 102, 1, 0, 0, 10, 1),
-          ('5915', 31, 0, 2, 0, 70, 0),
-          ('5933', 44, 0, 0, 1, 0, 0),
-          ('5873', 7, 0, 0, 0, 0, 0),
-          ('5896', 132, 0, 0, 0, 1, 1)]
+array_values = gather_data(cur, paese)
 
 maximo = 0
 minimo = 0
 tutte_somme = []
 for vallo in array_values[0]:
+#Array inventato
 #for vallo in arrAnn:
     tramo = vallo[1:]
     tutte_somme.append(sum(tramo))
@@ -100,21 +98,31 @@ for vallo in array_values[0]:
 minimo = min(tutte_somme)
 maximo = max(tutte_somme)
 
+grandezza = (len(str(maximo)))
+#print "La lunghezza dei caratteri e' %d" % (grandezza)
+
+inizio = str(maximo)[1]
+#print "Cifra Inizio %s " % inizio
+
+divi_molti = int('1' + '0'*(grandezza-1))
+#print "Divisore Moltiplicatore %s" % divi_molti
+
+print paese
 print "Min %d Max %d" % (minimo, maximo)
 
 lower_treshold = 100
-if maximo>10000:
-    upper_treshold = 10000
-elif maximo>10000 and maximo< 50000:
-    upper_treshold = 50000
-
-print "Low %d High %d Tresholds" % (lower_treshold, upper_treshold)
+upper_treshold = divi_molti-(divi_molti/10)
+print "Low %d High %d Thresholds" % (lower_treshold, upper_treshold)
 
 less_than = minimo + lower_treshold
-more_than = maximo - upper_treshold
-interval = more_than - less_than
-print "Interval %d" % interval
+if upper_treshold>maximo:
+    more_than = upper_treshold - maximo
+else:
+    more_than = maximo - upper_treshold
 
+#interval = more_than - less_than
+interval = maximo - minimo
+print "Interval %d" % interval
 tertile = interval/4
 print "Tertile %d" % tertile
 
@@ -123,8 +131,11 @@ for mover in range(1, 4):
     intermediate.append(tertile*mover)
 
 print "Second split %d third split %d fourth split %d" % (intermediate[0],intermediate[1],intermediate[2])
-print "First class - Less than %d (%d)" % (less_than,minimo)
+print
+print "LEGEND"
+print "First class - Less than %d (calculated value %d)" % (lower_treshold,minimo)
 print "Second class between %d and %d" % (less_than,intermediate[0])
 print "Third class between %d and %d" % (intermediate[0],intermediate[1])
 print "Fourth class between %d and %d" % (intermediate[1],intermediate[2])
-print "Last class - More than %d (%d)" % (more_than, maximo)
+print "Last class - More than %d (calculated value %d)" % (intermediate[2], maximo)
+print

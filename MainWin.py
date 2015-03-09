@@ -82,6 +82,7 @@ class AppSPARC:
                admin_global = chiave_area[1]['name_clean']
                self.area_messaggi.insert(INSERT, "Area ISOcode " + str(iso_global) + " modified name " + admin_global + "\n")
         ut3 = us.UtilitieSparc(paese, admin_global)
+        print admin_global
         self.area_messaggi.insert(INSERT, ut3.creazione_struttura(admin_global))
 
     def hazard_assessment(self):

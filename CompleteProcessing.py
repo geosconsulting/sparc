@@ -23,11 +23,13 @@ class Progetto(object):
         self.code = code
         self.proj_dir = "c:/data/tools/sparc/projects/"
         self.dirOutPaese = self.proj_dir + paese
-        self.dirOut = self.proj_dir + paese + "/" + admin + "/"
+        self.dirOut = self.proj_dir + paese + "/" + admin + "_" + str(code) + "/"
 
         self.shape_countries = "c:/data/tools/sparc/input_data/gaul/gaul_wfp_iso.shp"
         self.campo_nome_paese = "ADM0_NAME"
         self.campo_iso_paese = "ADM0_CODE"
+        self.campo_nome_admin1 = "ADM1_NAME"
+        self.campo_iso_admin1 = "ADM1_CODE"
         self.campo_nome_admin = "ADM2_NAME"
         self.campo_iso_admin = "ADM2_CODE"
 
@@ -123,7 +125,7 @@ class Progetto(object):
 
         return lista_admin2, listone
 
-    def livelli_amministrativi_0_1(self,code_admin):
+    def livelli_amministrativi_0_1(self, code_admin):
 
         comando = "SELECT ADM0_CODE,ADM1_NAME,ADM1_code FROM sparc_gaul_wfp_iso WHERE adm2_code=" + str(code_admin) + ";"
         self.cur.execute(comando)
@@ -132,13 +134,13 @@ class Progetto(object):
             Progetto.ADM1_GAUL_name = row[1]
             Progetto.ADM1_GAUL_code = row[2]
 
-    def creazione_struttura(self,admin_inviata):
+    def creazione_struttura(self, admin_name,adm_code):
 
         os.chdir(self.proj_dir)
         country_low = str(self.paese).lower()
         if os.path.exists(country_low):
             os.chdir(self.proj_dir + country_low)
-            admin_low = admin_inviata.lower()
+            admin_low = admin_name.lower() + "_" + str(adm_code)
             if os.path.exists(admin_low):
                 pass
             else:
@@ -147,7 +149,8 @@ class Progetto(object):
             os.chdir(self.proj_dir)
             os.mkdir(country_low)
             os.chdir(self.proj_dir + country_low)
-            admin_low = admin_inviata.lower()
+            #admin_low = admin_inviata.lower()
+            admin_low = admin_name.lower() + "_" + str(adm_code)
             if os.path.exists(admin_low):
                 pass
             else:
@@ -160,17 +163,16 @@ class HazardAssessmentCountry(Progetto):
     def estrazione_poly_admin(self):
 
         #filter_field_name = "ADM2_NAME"
-        filter_field_name = "ADM2_CODE"
+        #filter_field_name = "ADM2_CODE,ADM2_NAME"
+        filter_field_name = '"' + self.campo_nome_paese + "," + self.campo_iso_paese + "," + self.campo_nome_admin1 + "," + \
+                            self.campo_iso_admin1 + "," + self.campo_nome_admin + "," + self.campo_iso_admin + '"'
 
         # Get the input Layer
         inDriver = ogr.GetDriverByName("ESRI Shapefile")
         inDataSource = inDriver.Open(self.shape_countries, 0)
         inLayer = inDataSource.GetLayer()
         inLayerProj = inLayer.GetSpatialRef()
-        #print inLayerProj
 
-        #inLayer.SetAttributeFilter("ADM2_NAME = '" + str(self.admin) + "'")
-        print "ADM2_CODE=" + str(self.code)
         inLayer.SetAttributeFilter("ADM2_CODE=" + str(self.code))
 
         # Create the output LayerS
@@ -200,6 +202,7 @@ class HazardAssessmentCountry(Progetto):
 
         # Add features to the ouput Layer
         for inFeature in inLayer:
+
             # Create output Feature
             outFeature = ogr.Feature(outLayerDefn)
 
@@ -209,8 +212,8 @@ class HazardAssessmentCountry(Progetto):
                 fieldName = fieldDefn.GetName()
                 if fieldName not in filter_field_name:
                     continue
-                outFeature.SetField(outLayerDefn.GetFieldDefn(i).GetNameRef(),1)
-                    #inFeature.GetField(i))
+                dascrivere = inFeature.GetField(fieldName)
+                outFeature.SetField(outLayerDefn.GetFieldDefn(i).GetNameRef(), dascrivere)
 
             # Set geometry as centroid
             geom = inFeature.GetGeometryRef()
@@ -242,11 +245,19 @@ class HazardAssessmentCountry(Progetto):
 
     def taglio_raster_popolazione(self):
 
+        global admin_vect
+        admin_vect = self.dirOut + self.admin + ".shp"
+
         #CUT and SAVE Population within the admin2 area
         if self.population_raster!= "None":
-            lscan_out_rst = arcpy.Raster(self.population_raster) * arcpy.Raster(admin_rast)
+            # Process: Extract by Mask
+
             lscan_out = self.dirOut + self.admin + "_pop.tif"
-            lscan_out_rst.save(lscan_out)
+            arcpy.gp.ExtractByMask_sa(self.population_raster, admin_vect,lscan_out)
+
+            #lscan_out_rst = arcpy.Raster(self.population_raster) * arcpy.Raster(admin_rast)
+            #lscan_out_rst.save(lscan_out)
+
             return "sipop"
         else:
             return "nopop"
@@ -255,17 +266,21 @@ class HazardAssessmentCountry(Progetto):
 
         #CUT and SAVE Flooded areas within the admin2 area
         try:
-            flood_out_rst = arcpy.Raster(self.flood_aggregated) * arcpy.Raster(admin_rast)
+
+            flood_out = self.dirOut + self.admin + "_agg.tif"
+            #lscan_out = self.dirOut + self.admin + "_pop.tif"
+            lscan_out_rst = arcpy.gp.ExtractByMask_sa(self.flood_aggregated, admin_vect,flood_out)
+
+            #flood_out_rst = arcpy.Raster(self.flood_aggregated) * arcpy.Raster(admin_rast)
         except:
             pass
             return "NoFloodRaster"
 
-        flood_out = self.dirOut + self.admin + "_agg.tif"
-        flood_out_rst.save(flood_out)
+        #flood_out = self.dirOut + self.admin + "_agg.tif"
+        #flood_out_rst.save(flood_out)
         arcpy.CalculateStatistics_management(flood_out)
         try:
             proprieta = arcpy.GetRasterProperties_management(flood_out, "UNIQUEVALUECOUNT")
-            #print proprieta
             return "Flood"
         except:
             pass
@@ -348,7 +363,6 @@ class MonthlyAssessmentCountry(Progetto):
 
         file_amministrativo = self.dirOut + self.admin + ".shp"
         file_centroide = self.dirOut + self.admin + "_ctrd.shp"
-        #print file_centroide
         adm2_centroid = arcpy.FeatureToPoint_management(file_amministrativo,file_centroide, "CENTROID")
         coords = arcpy.da.SearchCursor(adm2_centroid,["SHAPE@XY"])
         global x
@@ -364,7 +378,6 @@ class MonthlyAssessmentCountry(Progetto):
             self.reliability_value = 0.0
         else:
             self.reliability_value = valore
-        print self.reliability_value
 
         valori_mensili = {}
         for raster_mese in lista_raster:
