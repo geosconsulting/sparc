@@ -146,63 +146,77 @@ def process_dct_annuali(adms, dct_valori_inondazione_annuale):
 
     lista = []
     for adm in adms:
-        sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_name, adm2_code FROM sparc_population_month WHERE adm2_name = '" + adm.lower() + "' AND adm0_name = '" + paese_ricerca + "';"
+        #print adm
+        sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_name, adm2_code FROM sparc_population_month WHERE adm2_code = '" + adm + "' AND adm0_name = '" + paese_ricerca + "';"
         #print sql
-        db_cursore.execute(sql);
+        db_cursore.execute(sql)
         risultati = db_cursore.fetchall()
         lista.append(risultati)
-    print lista
 
-    # dct_valori_amministrativi = {}
-    # for indice in range(0, len(lista)):
-    #     print indice
-    #     illo = str(lista[indice][0]['adm2_name'].strip()).lower()
-    #     dct_valori_amministrativi[illo] = {}
-    #     dct_valori_amministrativi[illo]["iso3"] = str(lista[indice][0]['iso3'].strip()).lower()
-    #     dct_valori_amministrativi[illo]["adm0_name"] = str(lista[indice][0]['adm0_name'].strip()).lower()
-    #     dct_valori_amministrativi[illo]["adm0_code"] = str(lista[indice][0]['adm0_code'].strip()).lower()
-    #     dct_valori_amministrativi[illo]["adm1_code"] = str(lista[indice][0]['adm1_code'].strip()).lower()
-    #     dct_valori_amministrativi[illo]["adm1_name"] = str(lista[indice][0]['adm1_name'].strip()).lower()
-    #     dct_valori_amministrativi[illo]["adm2_code"] = str(lista[indice][0]['adm2_code'].strip()).lower()
-    #     dct_valori_amministrativi[illo]["adm2_name"] = str(lista[indice][0]['adm2_name'].strip()).lower()
-    #
-    # lista_rp = [25, 50, 100, 200, 500, 1000]
-    # for valore in dct_valori_inondazione_annuale.items():
-    #     quanti_rp = len(valore[1].keys())
-    #     if quanti_rp<6:
-    #         for rp in lista_rp:
-    #             if rp not in valore[1].keys():
-    #                 dct_valori_inondazione_annuale[valore[0]][rp] = 0
-    #
-    # linee =[]
-    # for amministrativa_dct_amministrativi in dct_valori_amministrativi.items():
-    #     adm2_amministrativa = amministrativa_dct_amministrativi[0]
-    #     for amministrativa_dct_inondazione in dct_valori_inondazione_annuale.items():
-    #         if amministrativa_dct_inondazione[0] == adm2_amministrativa:
-    #             #print adm2_amministrativa,amministrativa_dct_inondazione[1]
-    #             linee.append(str(amministrativa_dct_amministrativi[1]['iso3']).upper() + "','" + str(amministrativa_dct_amministrativi[1]['adm0_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm0_code'] +
-    #                          ",'" + str(amministrativa_dct_amministrativi[1]['adm1_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm1_code'] +
-    #                          "," + amministrativa_dct_amministrativi[1]['adm2_code'] + ",'" + adm2_amministrativa +
-    #                          "'," + str(amministrativa_dct_inondazione[1][25]) + "," + str(amministrativa_dct_inondazione[1][50]) +
-    #                          "," + str(amministrativa_dct_inondazione[1][100]) + "," + str(amministrativa_dct_inondazione[1][200]) +
-    #                          "," + str(amministrativa_dct_inondazione[1][500]) + "," + str(amministrativa_dct_inondazione[1][1000]))
-    #
-    # lista_comandi = []
-    # for linea in linee:
-    #      inserimento = "INSERT INTO " + "public.sparc_annual_pop" + \
-    #                    " (iso3,adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name,rp25,rp50,rp100,rp200,rp500,rp1000)" \
-    #                    "VALUES('" + linea + ");"
-    #      lista_comandi.append(inserimento)
-    #
-    # return lista_comandi
+    dct_valori_amministrativi = {}
+    for indice in range(0, len(lista)):
+        radice_dct = lista[indice][0][6].strip()
+        dct_valori_amministrativi[radice_dct] = {}
+        dct_valori_amministrativi[radice_dct]["iso3"] = str(lista[indice][0][0].strip())
+        dct_valori_amministrativi[radice_dct]["adm0_name"] = str(lista[indice][0][1].strip())
+        dct_valori_amministrativi[radice_dct]["adm0_code"] = str(lista[indice][0][2].strip())
+        dct_valori_amministrativi[radice_dct]["adm1_code"] = str(lista[indice][0][3].strip())
+        dct_valori_amministrativi[radice_dct]["adm1_name"] = str(lista[indice][0][4].strip())
+        dct_valori_amministrativi[radice_dct]["adm2_name"] = str(lista[indice][0][5].strip())
+        dct_valori_amministrativi[radice_dct]["adm2_code"] = str(lista[indice][0][6].strip())
+    #print dct_valori_amministrativi
+
+
+    lista_rp = [25, 50, 100, 200, 500, 1000]
+    for valore in dct_valori_inondazione_annuale.items():
+        quanti_rp = len(valore[1].keys())
+        if quanti_rp < 6:
+            for rp in lista_rp:
+                if rp not in valore[1].keys():
+                    dct_valori_inondazione_annuale[valore[0]][rp] = 0
+
+    linee =[]
+    for amministrativa_dct_amministrativi in dct_valori_amministrativi.items():
+        adm2_amministrativa = amministrativa_dct_amministrativi[0]
+        for amministrativa_dct_inondazione in dct_valori_inondazione_annuale.items():
+            if amministrativa_dct_inondazione[0].split("_")[1] == adm2_amministrativa:
+                linee.append(str(amministrativa_dct_amministrativi[1]['iso3']).upper() + "','" + str(amministrativa_dct_amministrativi[1]['adm0_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm0_code'] +
+                             ",'" + str(amministrativa_dct_amministrativi[1]['adm1_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm1_code'] +
+                             "," + amministrativa_dct_amministrativi[1]['adm2_code'] + ",'" + adm2_amministrativa +
+                             "'," + str(amministrativa_dct_inondazione[1][25]) + "," + str(amministrativa_dct_inondazione[1][50]) +
+                             "," + str(amministrativa_dct_inondazione[1][100]) + "," + str(amministrativa_dct_inondazione[1][200]) +
+                             "," + str(amministrativa_dct_inondazione[1][500]) + "," + str(amministrativa_dct_inondazione[1][1000]))
+    lista_comandi = []
+    for linea in linee:
+         inserimento = "INSERT INTO " + "public.sparc_annual_pop" + \
+                       " (iso3,adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name,rp25,rp50,rp100,rp200,rp500,rp1000)" \
+                       "VALUES('" + linea + ");"
+         lista_comandi.append(inserimento)
+
+    return lista_comandi
+
+def inserisci_valori_dbfs(ritornati_passati):
+
+    conn_insert = psycopg2.connect(connection_string)
+    cur_insert = conn_insert.cursor()
+
+    for ritornato in ritornati_passati:
+        cur_insert.execute(ritornato)
+
+    conn_insert.commit()
+    conn_insert.close()
+    cur_insert.close()
 
 paese_ricerca = "Pakistan"
 
+#create_sparc_population_monthly_table()
 #lst_mensili = read_monthly_values_country_fromTXT(paese_ricerca)
 
+create_sparc_population_annual_table()
 dct_annuali = collect_annual_data_byRP_from_dbf_country(paese_ricerca)
 adms = dct_annuali[2].keys()
-#print process_dct_annuali(adms,dct_annuali[2])
+adms_names = [x.split("_")[1] for x in adms]
+inserisci_valori_dbfs(process_dct_annuali(adms_names, dct_annuali[2]))
 
-#create_sparc_population_annual_table()
-#create_sparc_population_monthly_table()
+
+

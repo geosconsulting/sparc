@@ -73,13 +73,27 @@ def scrittura_dati(paese):
     code_admin = ''
     scrittura_tabelle = completeSparc.ManagePostgresDB(paese, nome_admin, code_admin, dbname, user, password)
 
-    if scrittura_tabelle.check_tabella() == '42P01':
+    if scrittura_tabelle.check_tabella_month() == '42P01':
         scrittura_tabelle.create_sparc_population_month()
         scrittura_tabelle.fetch_results()
         scrittura_tabelle.inserisci_valori_calcolati()
-    if scrittura_tabelle.check_tabella() == 'exists':
+
+    if scrittura_tabelle.check_tabella_month() == 'exists':
         scrittura_tabelle.fetch_results()
         scrittura_tabelle.inserisci_valori_calcolati()
+
+    if scrittura_tabelle.check_tabella_year() == '42P01':
+        scrittura_tabelle.create_sparc_population_annual()
+        dct_annuali = scrittura_tabelle.collect_annual_data_byRP_from_dbf_country()
+        adms = dct_annuali[2].keys()
+        adms_names = [x.split("_")[1] for x in adms]
+        scrittura_tabelle.inserisci_valori_dbfs(scrittura_tabelle.process_dct_annuali(adms_names, dct_annuali[2]))
+
+    if scrittura_tabelle.check_tabella_year() == 'exists':
+        dct_annuali = scrittura_tabelle.collect_annual_data_byRP_from_dbf_country()
+        adms = dct_annuali[2].keys()
+        adms_names = [x.split("_")[1] for x in adms]
+        scrittura_tabelle.inserisci_valori_dbfs(scrittura_tabelle.process_dct_annuali(adms_names, dct_annuali[2]))
 
     scrittura_tabelle.salva_cambi()
     scrittura_tabelle.close_connection()

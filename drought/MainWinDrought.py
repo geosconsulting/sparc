@@ -26,15 +26,14 @@ class AppSPARCDrought:
         frame.pack_propagate(0)
         frame.pack()
 
-        paesi = self.raccogli_paesi_db()
+        self.raccogli_paesi_db()
         self.box_value_adm0 = StringVar()
         self.box_adm0 = ttk.Combobox(frame, textvariable= self.box_value_adm0)
         self.box_adm0['values'] = self.lista_paesi
-        #self.box_adm0.current(36)
+        self.box_adm0.current(0)
         self.box_adm0.pack(side=LEFT)
 
         self.button = Button(frame, text="Drought Assessment", fg="red", command=self.raccogli_dati_amministrativi).pack(side=LEFT)
-        #self.button = Button(frame, text="Test DB", fg="red", command=self.raccogli_paesi_db).pack(side=LEFT)
 
         root = Tk()
         root.title("SPARC Console")
@@ -43,18 +42,21 @@ class AppSPARCDrought:
 
     def raccogli_paesi_db(self):
 
-        paesi = completeDrought.ManagePostgresDB(self.dbname, self.user, self.password)
-        self.lista_paesi = paesi.leggi_paesi()
-
+        paesi = completeDrought.ManagePostgresDBDrought(self.dbname, self.user, self.password)
+        self.lista_paesi = paesi.all_country_db()
 
     def raccogli_dati_amministrativi(self):
 
         paese = self.box_value_adm0.get()
+        self.area_messaggi.delete(1.0, END)
 
-        aree_amministrative = completeDrought.ManagePostgresDB(self.dbname, self.user, self.password)
-        lista_admin2 = aree_amministrative.leggi_aree_amministrative_paese(paese)
+        aree_amministrative = completeDrought.ManagePostgresDBDrought(self.dbname, self.user, self.password)
+        lista_admin2 = aree_amministrative.lista_admin2(paese)
 
         self.area_messaggi.insert(INSERT, lista_admin2)
+
+
+
         #lista_amministrazioni = valori_amministrativi.lista_admin2()[1]
 
         # for aministrazione in lista_amministrazioni.iteritems():
@@ -79,7 +81,6 @@ class AppSPARCDrought:
         #         newHazardAssessment.calcolo_statistiche_zone_inondazione()
         #     else:
         #         pass
-    #processo_dati(paese)
 
     def scrittura_dati(self,paese):
 
@@ -88,7 +89,7 @@ class AppSPARCDrought:
         gaul_wfp_iso = 'sparc_gaul_wfp_iso' #THIS IS THE GIS TABLE CONTAINING ALL POLYGONS
         nome_admin = ''
         code_admin = ''
-        scrittura_tabelle = completeDrought.ManagePostgresDB(paese, nome_admin, code_admin, dbname, user, password)
+        scrittura_tabelle = completeDrought.ManagePostgresDBDrought(paese, nome_admin, code_admin, dbname, user, password)
 
         if scrittura_tabelle.check_tabella() == '42P01':
             scrittura_tabelle.create_sparc_population_month()
@@ -99,7 +100,6 @@ class AppSPARCDrought:
             scrittura_tabelle.inserisci_valori_calcolati()
         scrittura_tabelle.salva_cambi()
         scrittura_tabelle.close_connection()
-    #scrittura_dati(paese)
 
     def create_project(self):
 

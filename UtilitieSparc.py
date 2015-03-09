@@ -25,9 +25,6 @@ class UtilitieSparc(object):
     #DA MAIN
     shape_countries = "input_data/gaul/gaul_wfp_iso.shp"
 
-    #DA RECORSIVO
-    #shape_countries = "c:/data/tools/sparc/input_data/gaul/gaul_wfp.shp"
-
     campo_nome_paese = "ADM0_NAME"
     campo_iso_paese = "ADM0_CODE"
     campo_nome_admin = "ADM2_NAME"

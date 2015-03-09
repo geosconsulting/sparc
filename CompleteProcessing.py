@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*
 
+
+import dbf
 import unicodedata
 import re
 import os
@@ -49,7 +51,6 @@ class Progetto(object):
             print e.message
 
         self.cur = self.conn.cursor()
-        #self.cur = self.conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
         comando = "SELECT c.name,c.iso2,c.iso3,a.area_name FROM SPARC_wfp_countries c " \
                   "INNER JOIN SPARC_wfp_areas a " \
                   "ON c.wfp_area = a.area_id WHERE c.name = '" + self.paese + "';"
@@ -58,8 +59,6 @@ class Progetto(object):
             self.wfp_area = str(row[3]).strip()
             self.iso3 = row[2]
 
-        #self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif" #popmap10.tif"
-        #print "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif"
         if os.path.isfile("C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "13.tif"):
             self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "13.tif" #popmap10.tif"
         else:
@@ -141,6 +140,7 @@ class Progetto(object):
         if os.path.exists(country_low):
             os.chdir(self.proj_dir + country_low)
             admin_low = admin_name.lower() + "_" + str(adm_code)
+            print admin_low
             if os.path.exists(admin_low):
                 pass
             else:
@@ -149,21 +149,19 @@ class Progetto(object):
             os.chdir(self.proj_dir)
             os.mkdir(country_low)
             os.chdir(self.proj_dir + country_low)
-            #admin_low = admin_inviata.lower()
             admin_low = admin_name.lower() + "_" + str(adm_code)
+            print admin_low
             if os.path.exists(admin_low):
                 pass
             else:
                 os.mkdir(admin_low.replace("\n", ""))
 
-        #return "Project created......\n"
+        return "Project created......\n"
 
 class HazardAssessmentCountry(Progetto):
 
     def estrazione_poly_admin(self):
 
-        #filter_field_name = "ADM2_NAME"
-        #filter_field_name = "ADM2_CODE,ADM2_NAME"
         filter_field_name = '"' + self.campo_nome_paese + "," + self.campo_iso_paese + "," + self.campo_nome_admin1 + "," + \
                             self.campo_iso_admin1 + "," + self.campo_nome_admin + "," + self.campo_iso_admin + '"'
 
@@ -268,29 +266,36 @@ class HazardAssessmentCountry(Progetto):
         try:
 
             flood_out = self.dirOut + self.admin + "_agg.tif"
-            #lscan_out = self.dirOut + self.admin + "_pop.tif"
-            lscan_out_rst = arcpy.gp.ExtractByMask_sa(self.flood_aggregated, admin_vect,flood_out)
-
-            #flood_out_rst = arcpy.Raster(self.flood_aggregated) * arcpy.Raster(admin_rast)
+            arcpy.gp.ExtractByMask_sa(self.flood_aggregated, admin_vect,flood_out)
         except:
             pass
             return "NoFloodRaster"
 
-        #flood_out = self.dirOut + self.admin + "_agg.tif"
-        #flood_out_rst.save(flood_out)
-        arcpy.CalculateStatistics_management(flood_out)
+            arcpy.CalculateStatistics_management(flood_out)
         try:
-            proprieta = arcpy.GetRasterProperties_management(flood_out, "UNIQUEVALUECOUNT")
             return "Flood"
         except:
             pass
             return "NoFlood"
 
     def calcolo_statistiche_zone_inondazione(self):
+
         flood_out = arcpy.Raster(self.dirOut + self.admin + "_agg.tif")
         pop_out = arcpy.Raster(self.dirOut + self.admin + "_pop.tif")
-        pop_stat_dbf = self.dirOut + self.admin.lower() + "_pop_stat.dbf"
-        tab_valori = arcpy.gp.ZonalStatisticsAsTable_sa(flood_out, "Value", pop_out, pop_stat_dbf , "DATA", "ALL")
+
+        #one or both raster could be empty (no flood in polygon) I chech that
+        sum_val_fld = int(arcpy.GetRasterProperties_management(flood_out, "UNIQUEVALUECOUNT")[0])
+        sum_val_pop = int(arcpy.GetRasterProperties_management(pop_out, "UNIQUEVALUECOUNT")[0])
+
+        if sum_val_fld > 0 and sum_val_pop > 0:
+            pop_stat_dbf = self.dirOut + self.admin.lower() + "_pop_stat.dbf"
+            arcpy.gp.ZonalStatisticsAsTable_sa(flood_out, "Value", pop_out, pop_stat_dbf , "DATA", "ALL")
+        else:
+            template_dbf = "C:/data/tools/sparc/input_data/flood/template_pop_stat.dbf"
+            pop_stat_dbf = self.admin.lower() + "_pop_stat.dbf"
+            print self.dirOut, pop_stat_dbf
+            arcpy.CreateTable_management(self.dirOut, pop_stat_dbf, template_dbf)
+
         return "People in flood prone areas....\n"
 
 class MonthlyAssessmentCountry(Progetto):
@@ -402,9 +407,6 @@ class MonthlyAssessmentCountry(Progetto):
         minimo_valore = dizionario_in[mese_di_minimo_valore]
         mese_di_massimo_valore = max(dizionario_in, key = dizionario_in.get)
         massimo_valore = dizionario_in[mese_di_massimo_valore]
-
-        #print self.admin,minimo_valore,massimo_valore
-
         #NORMALIZZAZIONE FATTA A MANO CALCOLANDO TUTTO
         #LO USO PERCHE ALTRIMENTI SI INCASINA LA GENERAZIONE DEI PLOTS
         global normalizzati
@@ -413,9 +415,7 @@ class MonthlyAssessmentCountry(Progetto):
             if minimo_valore==0 and massimo_valore==0:
                 pass
             else:
-                #print linea
                 x_new = (linea[1] - float(minimo_valore))/(float(massimo_valore)-float(minimo_valore))
-                #print x_new
                 normalizzati[linea[0]] = x_new
 
         with open(self.dirOut + self.admin + "_prec_norm.csv", 'wb') as csvfile:
@@ -439,7 +439,6 @@ class MonthlyAssessmentCountry(Progetto):
                     print splittato_comma[9]
                 splittato_mese_inzio = splittato_comma[0].split("/")
                 splittato_mese_fine = splittato_comma[1].split("/")
-                #print splittato_mese_inzio[1], splittato_mese_fine[1]
                 if splittato_mese_inzio[1]!=0 or splittato_mese_fine[0]!=0:
                     differenza = int(splittato_mese_fine[1]) - int(splittato_mese_inzio[1])
                     if differenza == 0:
@@ -553,7 +552,11 @@ class MonthlyAssessmentCountry(Progetto):
 
 class ManagePostgresDB(Progetto):
 
-    def check_tabella(self):
+    #########  MONTLHY CALCULATIONS   #########
+    #########  MONTLHY CALCULATIONS   #########
+    #########  MONTLHY CALCULATIONS   #########
+
+    def check_tabella_month(self):
 
         esiste_tabella = "SELECT '"+ self.schema + ".sparc_population_month'::regclass"
         connection_string = "dbname=%s user=%s password=%s" % (self.dbname, self.user,self.password)
@@ -586,7 +589,6 @@ class ManagePostgresDB(Progetto):
 
         cursor = self.conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
         comando = "SELECT c.name,c.iso2,c.iso3,a.area_name FROM SPARC_wfp_countries c INNER JOIN SPARC_wfp_areas a ON c.wfp_area = a.area_id WHERE c.name = '" + self.paese + "';"
-        #print comando
         cursor.execute(comando)
         row_count = 0
         for row in cursor:
@@ -652,8 +654,160 @@ class ManagePostgresDB(Progetto):
                                      + linea[12] + "," + linea[13] + "," + linea[14] + "," + linea[15] + "," \
                                      + linea[16] + "," + linea[17] + "," + linea[18] + "," + linea[19] + "," \
                                      + linea[20] + ");"
-            #print inserimento
+
             self.cur.execute(inserimento)
+
+    #########  ANNUAL CALCULATIONS   #########
+    #########  ANNUAL CALCULATIONS   #########
+    #########  ANNUAL CALCULATIONS   #########
+
+    def check_tabella_year(self):
+
+        esiste_tabella = "SELECT '"+ self.schema + ".sparc_annual_pop'::regclass"
+        connection_string = "dbname=%s user=%s password=%s" % (self.dbname, self.user,self.password)
+        conn_check = psycopg2.connect(connection_string)
+        cur_check = conn_check.cursor()
+
+        try:
+            cur_check.execute(esiste_tabella)
+            return "exists"
+        except psycopg2.ProgrammingError as laTabellaNonEsiste:
+            #descrizione_errore = laTabellaNonEsiste.pgerror
+            codice_errore = laTabellaNonEsiste.pgcode
+            #return descrizione_errore, codice_errore
+            return codice_errore
+
+        cur_check.close()
+        conn_check.close()
+
+    def create_sparc_population_annual(self):
+
+        SQL = "CREATE TABLE %s.%s %s %s;"
+        campi = """(
+              id serial NOT NULL,
+              iso3 character(3),
+              adm0_name character(120),
+              adm0_code character(12),
+              adm1_code character(12),
+              adm1_name character(120),
+              adm2_code character(12),
+              adm2_name character(120),
+              rp25 integer,
+              rp50 integer,
+              rp100 integer,
+              rp200 integer,
+              rp500 integer,
+              rp1000 integer,"""
+        constraint = "CONSTRAINT pk_annual_pop PRIMARY KEY (id));"
+
+        try:
+            comando = SQL % (self.schema, 'sparc_annual_pop', campi, constraint)
+            self.cur.execute(comando)
+            print "Annual Population Table Created"
+        except psycopg2.Error as createErrore:
+            descrizione_errore = createErrore.pgerror
+            codice_errore = createErrore.pgcode
+            print descrizione_errore, codice_errore
+
+    def collect_annual_data_byRP_from_dbf_country(self):
+
+        contatore_si = 0
+        lista_si_dbf = []
+
+        direttorio = self.proj_dir + self.paese
+        dct_valori_inondazione_annuale = {}
+        for direttorio_principale, direttorio_secondario, file_vuoto in os.walk(direttorio):
+            if direttorio_principale != direttorio:
+                paese = direttorio_principale.split("/")[5].split("\\")[0]
+                admin = direttorio_principale.split(paese)[1][1:]
+                files_dbf = glob.glob(direttorio_principale + "/*.dbf")
+                for file in files_dbf:
+                    fileName, fileExtension = os.path.splitext(file)
+                    if 'stat' in fileName:
+                        contatore_si += 1
+                        lista_si_dbf.append(direttorio_principale)
+                        try:
+                            filecompleto = fileName + ".dbf"
+                            tabella = dbf.Table(filecompleto)
+                            tabella.open()
+                            dct_valori_inondazione_annuale[admin] = {}
+                            for recordio in tabella:
+                                if recordio.value > 0:
+                                    dct_valori_inondazione_annuale[admin][recordio.value] = recordio.sum
+                        except:
+                            pass
+
+        lista_stat_dbf = [25, 50, 100, 200, 500, 1000]
+        for valore in dct_valori_inondazione_annuale.items():
+            quanti_rp = len(valore[1].keys())
+            if quanti_rp < 6:
+                for rp in lista_stat_dbf:
+                    if rp not in valore[1].keys():
+                        dct_valori_inondazione_annuale[valore[0]][rp] = 0
+
+        return contatore_si,lista_si_dbf, dct_valori_inondazione_annuale
+
+    def process_dct_annuali(self,adms, dct_valori_inondazione_annuale):
+
+        lista = []
+        for adm in adms:
+            #print adm
+            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_name, adm2_code FROM sparc_population_month WHERE adm2_code = '" + adm + "' AND adm0_name = '" + self.paese + "';"
+            #print sql
+            self.cur.execute(sql)
+            risultati = self.cur.fetchall()
+            lista.append(risultati)
+
+        dct_valori_amministrativi = {}
+        for indice in range(0, len(lista)):
+            radice_dct = lista[indice][0][6].strip()
+            dct_valori_amministrativi[radice_dct] = {}
+            dct_valori_amministrativi[radice_dct]["iso3"] = str(lista[indice][0][0].strip())
+            dct_valori_amministrativi[radice_dct]["adm0_name"] = str(lista[indice][0][1].strip())
+            dct_valori_amministrativi[radice_dct]["adm0_code"] = str(lista[indice][0][2].strip())
+            dct_valori_amministrativi[radice_dct]["adm1_code"] = str(lista[indice][0][3].strip())
+            dct_valori_amministrativi[radice_dct]["adm1_name"] = str(lista[indice][0][4].strip())
+            dct_valori_amministrativi[radice_dct]["adm2_name"] = str(lista[indice][0][5].strip())
+            dct_valori_amministrativi[radice_dct]["adm2_code"] = str(lista[indice][0][6].strip())
+        #print dct_valori_amministrativi
+
+
+        lista_rp = [25, 50, 100, 200, 500, 1000]
+        for valore in dct_valori_inondazione_annuale.items():
+            quanti_rp = len(valore[1].keys())
+            if quanti_rp < 6:
+                for rp in lista_rp:
+                    if rp not in valore[1].keys():
+                        dct_valori_inondazione_annuale[valore[0]][rp] = 0
+
+        linee =[]
+        for amministrativa_dct_amministrativi in dct_valori_amministrativi.items():
+            adm2_amministrativa = amministrativa_dct_amministrativi[0]
+            for amministrativa_dct_inondazione in dct_valori_inondazione_annuale.items():
+                if amministrativa_dct_inondazione[0].split("_")[1] == adm2_amministrativa:
+                    linee.append(str(amministrativa_dct_amministrativi[1]['iso3']).upper() + "','" + str(amministrativa_dct_amministrativi[1]['adm0_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm0_code'] +
+                                 ",'" + str(amministrativa_dct_amministrativi[1]['adm1_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm1_code'] +
+                                 "," + amministrativa_dct_amministrativi[1]['adm2_code'] + ",'" + adm2_amministrativa +
+                                 "'," + str(amministrativa_dct_inondazione[1][25]) + "," + str(amministrativa_dct_inondazione[1][50]) +
+                                 "," + str(amministrativa_dct_inondazione[1][100]) + "," + str(amministrativa_dct_inondazione[1][200]) +
+                                 "," + str(amministrativa_dct_inondazione[1][500]) + "," + str(amministrativa_dct_inondazione[1][1000]))
+        lista_comandi = []
+        for linea in linee:
+             inserimento = "INSERT INTO " + "public.sparc_annual_pop" + \
+                           " (iso3,adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name,rp25,rp50,rp100,rp200,rp500,rp1000)" \
+                           "VALUES('" + linea + ");"
+             lista_comandi.append(inserimento)
+
+        return lista_comandi
+
+    def inserisci_valori_dbfs(self,ritornati_passati):
+
+        for ritornato in ritornati_passati:
+            self.cur.execute(ritornato)
+
+    #########  COMMON TASKS   #########
+    #########  COMMON TASKS   #########
+    #########  COMMON TASKS   #########
 
     def salva_cambi(self):
         try:

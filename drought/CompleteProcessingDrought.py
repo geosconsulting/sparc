@@ -1,31 +1,31 @@
 # -*- coding: utf-8 -*
 
+
+import dbf
 import unicodedata
 import re
 import os
-import psycopg2
-import psycopg2.extras
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import Table, Column, Integer, String, MetaData,ForeignKey
-
 from osgeo import ogr
 ogr.UseExceptions()
-
+import glob
+import csv
+import psycopg2
+import psycopg2.extras
 import arcpy
 arcpy.CheckOutExtension("spatial")
-
 from arcpy import env
 env.overwriteOutput = "true"
 
-class ProgettoDrought(object):
+class ProjectDrought(object):
 
     def __init__(self, dbname, user, password):
 
-        self.proj_dir = "c:/data/tools/sparc/projects/"
+        self.proj_dir = "c:/data/tools/sparc/drgt_prj/"
         self.shape_countries = "c:/data/tools/sparc/input_data/gaul/gaul_wfp_iso.shp"
         self.campo_nome_paese = "ADM0_NAME"
         self.campo_iso_paese = "ADM0_CODE"
+        self.campo_nome_admin1 = "ADM1_NAME"
+        self.campo_iso_admin1 = "ADM1_CODE"
         self.campo_nome_admin = "ADM2_NAME"
         self.campo_iso_admin = "ADM2_CODE"
 
@@ -41,45 +41,71 @@ class ProgettoDrought(object):
         try:
             connection_string = "dbname=%s user=%s password=%s" % (self.dbname, self.user, self.password)
             self.conn = psycopg2.connect(connection_string)
-            print "Connesso"
         except Exception as e:
             print e.message
 
-        try:
-            self.cur = self.conn.cursor()
-            print "Cursore attivo"
-        except Exception as e:
-            print e.message
+        self.cur = self.conn.cursor()
 
-        #stringa_engine = 'postgresql://geonode:geonode@localhost/geonode-imports'
-        self.engine = create_engine(r'postgresql://geonode:geonode@localhost/geonode-imports') # , echo=True)
-        self.conn = self.engine.connect()
-        self.metadata = MetaData(self.engine)
+        self.dirOutPaese = ""
+        self.dirOut = ""
 
-        # if os.path.isfile("C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif"):
-        #     self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "10.tif" #popmap10.tif"
-        # else:
-        #     print "No Population Raster......"
-        #     self.population_raster = "None"
-        #
-        # self.flood_aggregated = "C:/data/tools/sparc/input_data/flood/merged/" + self.paese + "_all_rp_rcl.tif"
-        # self.historical_accidents = "C:/data/tools/sparc/input_data/historical_data/floods.csv"
-        #
-        # if os.path.isfile("C:/data/tools/sparc/input_data/geocoded/risk_map/" + self.paese + ".tif"):
-        #     self.risk_raster = "C:/data/tools/sparc/input_data/geocoded/risk_map/" + self.paese + ".tif"
-        # else:
-        #     self.risk_raster = "None"
-        #     print "Risk raster not available...."
-        #
-        # self.reliability_value = ""
+        self.drought_monthly_tifs_dir = "C:/data/tools/sparc/input_data/drought/DSIMonthlyFreq_tiff/"
+        self.drought_seasonal_tifs_dir = "C:/data/tools/sparc/input_data/drought/SSNMonthly_tiff/"
 
-    def creazione_struttura(self,admin_inviata):
+        os.chdir(self.drought_monthly_tifs_dir)
+        self.drought_monthly_tifs = glob.glob("*.tif")
+        #print self.drought_monthly_tifs
+
+        os.chdir(self.drought_seasonal_tifs_dir)
+        self.drought_seasonal_tifs = glob.glob("*.tif")
+        #print self.drought_seasonal_tifs
+
+
+    def lista_admin2(self,paese):
+
+        country_capitalized = paese.capitalize()
+        self.layer.SetAttributeFilter(self.campo_nome_paese + " = '" + country_capitalized + "'")
+
+        self.dirOutPaese = self.proj_dir + paese
+
+        listone = {}
+        lista_iso = []
+        lista_clean = []
+        lista_admin2 = []
+
+        for feature in self.layer:
+            cod_admin = feature.GetField(self.campo_iso_admin)
+            nome_zozzo = feature.GetField(self.campo_nome_admin)
+
+            unicode_zozzo = nome_zozzo.decode('utf-8')
+            nome_per_combo = unicodedata.normalize('NFKD', unicode_zozzo)
+
+            no_dash = re.sub('-', '_', nome_zozzo)
+            no_space = re.sub(' ', '', no_dash)
+            no_slash = re.sub('/', '_', no_space)
+            no_apice = re.sub('\'', '', no_slash)
+            no_bad_char = re.sub(r'-/\([^)]*\)', '', no_apice)
+            unicode_pulito = no_bad_char.decode('utf-8')
+            nome_pulito = unicodedata.normalize('NFKD', unicode_pulito).encode('ascii', 'ignore')
+
+            lista_iso.append(cod_admin)
+            lista_clean.append(nome_pulito)
+            lista_admin2.append(nome_per_combo)
+
+        for i in range(len(lista_iso)):
+            listone[lista_iso[i]] = {'name_orig': lista_admin2[i],'name_clean': lista_clean[i]}
+
+        return lista_admin2, listone
+
+
+    def creazione_struttura(self, admin_name, adm_code):
 
         os.chdir(self.proj_dir)
         country_low = str(self.paese).lower()
         if os.path.exists(country_low):
             os.chdir(self.proj_dir + country_low)
-            admin_low = admin_inviata.lower()
+            admin_low = admin_name.lower() + "_" + str(adm_code)
+            print admin_low
             if os.path.exists(admin_low):
                 pass
             else:
@@ -88,30 +114,28 @@ class ProgettoDrought(object):
             os.chdir(self.proj_dir)
             os.mkdir(country_low)
             os.chdir(self.proj_dir + country_low)
-            admin_low = admin_inviata.lower()
+            admin_low = admin_name.lower() + "_" + str(adm_code)
+            print admin_low
             if os.path.exists(admin_low):
                 pass
             else:
                 os.mkdir(admin_low.replace("\n", ""))
 
-        #return "Project created......\n"
+        return "Project created......\n"
 
-class HazardAssessmentCountry(ProgettoDrought):
+class HazardAssessmentDrought(ProjectDrought):
 
     def estrazione_poly_admin(self):
 
-        #filter_field_name = "ADM2_NAME"
-        filter_field_name = "ADM2_CODE"
+        filter_field_name = '"' + self.campo_nome_paese + "," + self.campo_iso_paese + "," + self.campo_nome_admin1 + "," + \
+                            self.campo_iso_admin1 + "," + self.campo_nome_admin + "," + self.campo_iso_admin + '"'
 
         # Get the input Layer
         inDriver = ogr.GetDriverByName("ESRI Shapefile")
         inDataSource = inDriver.Open(self.shape_countries, 0)
         inLayer = inDataSource.GetLayer()
         inLayerProj = inLayer.GetSpatialRef()
-        #print inLayerProj
 
-        #inLayer.SetAttributeFilter("ADM2_NAME = '" + str(self.admin) + "'")
-        print "ADM2_CODE=" + str(self.code)
         inLayer.SetAttributeFilter("ADM2_CODE=" + str(self.code))
 
         # Create the output LayerS
@@ -141,6 +165,7 @@ class HazardAssessmentCountry(ProgettoDrought):
 
         # Add features to the ouput Layer
         for inFeature in inLayer:
+
             # Create output Feature
             outFeature = ogr.Feature(outLayerDefn)
 
@@ -150,8 +175,8 @@ class HazardAssessmentCountry(ProgettoDrought):
                 fieldName = fieldDefn.GetName()
                 if fieldName not in filter_field_name:
                     continue
-                outFeature.SetField(outLayerDefn.GetFieldDefn(i).GetNameRef(),1)
-                    #inFeature.GetField(i))
+                dascrivere = inFeature.GetField(fieldName)
+                outFeature.SetField(outLayerDefn.GetFieldDefn(i).GetNameRef(), dascrivere)
 
             # Set geometry as centroid
             geom = inFeature.GetGeometryRef()
@@ -183,11 +208,19 @@ class HazardAssessmentCountry(ProgettoDrought):
 
     def taglio_raster_popolazione(self):
 
+        global admin_vect
+        admin_vect = self.dirOut + self.admin + ".shp"
+
         #CUT and SAVE Population within the admin2 area
         if self.population_raster!= "None":
-            lscan_out_rst = arcpy.Raster(self.population_raster) * arcpy.Raster(admin_rast)
+            # Process: Extract by Mask
+
             lscan_out = self.dirOut + self.admin + "_pop.tif"
-            lscan_out_rst.save(lscan_out)
+            arcpy.gp.ExtractByMask_sa(self.population_raster, admin_vect,lscan_out)
+
+            #lscan_out_rst = arcpy.Raster(self.population_raster) * arcpy.Raster(admin_rast)
+            #lscan_out_rst.save(lscan_out)
+
             return "sipop"
         else:
             return "nopop"
@@ -196,71 +229,84 @@ class HazardAssessmentCountry(ProgettoDrought):
 
         #CUT and SAVE Flooded areas within the admin2 area
         try:
-            flood_out_rst = arcpy.Raster(self.flood_aggregated) * arcpy.Raster(admin_rast)
+
+            flood_out = self.dirOut + self.admin + "_agg.tif"
+            arcpy.gp.ExtractByMask_sa(self.flood_aggregated, admin_vect,flood_out)
         except:
             pass
             return "NoFloodRaster"
 
-        flood_out = self.dirOut + self.admin + "_agg.tif"
-        flood_out_rst.save(flood_out)
-        arcpy.CalculateStatistics_management(flood_out)
+            arcpy.CalculateStatistics_management(flood_out)
         try:
-            proprieta = arcpy.GetRasterProperties_management(flood_out, "UNIQUEVALUECOUNT")
-            #print proprieta
             return "Flood"
         except:
             pass
             return "NoFlood"
 
     def calcolo_statistiche_zone_inondazione(self):
+
         flood_out = arcpy.Raster(self.dirOut + self.admin + "_agg.tif")
         pop_out = arcpy.Raster(self.dirOut + self.admin + "_pop.tif")
-        pop_stat_dbf = self.dirOut + self.admin.lower() + "_pop_stat.dbf"
-        tab_valori = arcpy.gp.ZonalStatisticsAsTable_sa(flood_out, "Value", pop_out, pop_stat_dbf , "DATA", "ALL")
+
+        #one or both raster could be empty (no flood in polygon) I chech that
+        sum_val_fld = int(arcpy.GetRasterProperties_management(flood_out, "UNIQUEVALUECOUNT")[0])
+        sum_val_pop = int(arcpy.GetRasterProperties_management(pop_out, "UNIQUEVALUECOUNT")[0])
+
+        if sum_val_fld > 0 and sum_val_pop > 0:
+            pop_stat_dbf = self.dirOut + self.admin.lower() + "_pop_stat.dbf"
+            arcpy.gp.ZonalStatisticsAsTable_sa(flood_out, "Value", pop_out, pop_stat_dbf , "DATA", "ALL")
+        else:
+            template_dbf = "C:/data/tools/sparc/input_data/flood/template_pop_stat.dbf"
+            pop_stat_dbf = self.admin.lower() + "_pop_stat.dbf"
+            print self.dirOut, pop_stat_dbf
+            arcpy.CreateTable_management(self.dirOut, pop_stat_dbf, template_dbf)
+
         return "People in flood prone areas....\n"
 
-class ManagePostgresDB(ProgettoDrought):
+class ManagePostgresDBDrought(ProjectDrought):
 
-    def leggi_paesi(self):
+    #########  MONTLHY CALCULATIONS   #########
+    #########  MONTLHY CALCULATIONS   #########
+    #########  MONTLHY CALCULATIONS   #########
 
-        tab_paesi = Table('sparc_wfp_countries', self.metadata, autoload=True, autoload_with=self.conn, postgresql_ignore_search_path=True)
+    def check_tabella_month(self):
 
-        s = tab_paesi.select()
-        rs = s.execute()
-        paesi_dal_db = rs.fetchall()
-        paesi = []
-        for paese in paesi_dal_db:
-            paesi.append(paese[0])
+        esiste_tabella = "SELECT '"+ self.schema + ".sparc_population_month'::regclass"
+        connection_string = "dbname=%s user=%s password=%s" % (self.dbname, self.user,self.password)
+        conn_check = psycopg2.connect(connection_string)
+        cur_check = conn_check.cursor()
 
-        return paesi
+        try:
+            cur_check.execute(esiste_tabella)
+            return "exists"
+        except psycopg2.ProgrammingError as laTabellaNonEsiste:
+            #descrizione_errore = laTabellaNonEsiste.pgerror
+            codice_errore = laTabellaNonEsiste.pgcode
+            #return descrizione_errore, codice_errore
+            return codice_errore
 
-    def leggi_aree_amministrative_paese(self, paese):
+        cur_check.close()
+        conn_check.close()
 
-        comando = "SELECT adm0_name,iso3,adm1_name,adm1_code,adm2_name,adm2_code FROM sparc_gaul_wfp_iso WHERE adm0_name ='" + paese.strip() + "';"
-        #print comando
-        admin_paese = self.cur.execute(comando)
-        print admin_paese
-        return admin_paese
+    def fetch_results(self):
 
+        global lista_finale
+        lista_finale=[]
 
-    def check_tabella(self,tabella):
+        with open(self.proj_dir + self.paese + "/" + self.paese + ".txt", 'rb') as csvfile_pop_month:
+            pop_monthly_reader = csv.reader(csvfile_pop_month, delimiter=',', quotechar='"')
+            for row in pop_monthly_reader:
+                lista_finale.append(row)
 
-            esiste_tabella = "SELECT '"+ self.schema + "." + tabella + "'::regclass"
-            connection_string = "dbname=%s user=%s password=%s" % (self.dbname, self.user,self.password)
-            conn_check = psycopg2.connect(connection_string)
-            cur_check = conn_check.cursor()
+    def leggi_valori_amministrativi(self):
 
-            try:
-                cur_check.execute(esiste_tabella)
-                return "exists"
-            except psycopg2.ProgrammingError as laTabellaNonEsiste:
-                #descrizione_errore = laTabellaNonEsiste.pgerror
-                codice_errore = laTabellaNonEsiste.pgcode
-                #return descrizione_errore, codice_errore
-                return codice_errore
-
-            cur_check.close()
-            conn_check.close()
+        cursor = self.conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
+        comando = "SELECT c.name,c.iso2,c.iso3,a.area_name FROM SPARC_wfp_countries c INNER JOIN SPARC_wfp_areas a ON c.wfp_area = a.area_id WHERE c.name = '" + self.paese + "';"
+        cursor.execute(comando)
+        row_count = 0
+        for row in cursor:
+            row_count += 1
+            return row[0], row[1], row[2], row[3]
 
     def cancella_tabella(self):
 
@@ -321,8 +367,178 @@ class ManagePostgresDB(ProgettoDrought):
                                      + linea[12] + "," + linea[13] + "," + linea[14] + "," + linea[15] + "," \
                                      + linea[16] + "," + linea[17] + "," + linea[18] + "," + linea[19] + "," \
                                      + linea[20] + ");"
-            #print inserimento
+
             self.cur.execute(inserimento)
+
+    #########  ANNUAL CALCULATIONS   #########
+    #########  ANNUAL CALCULATIONS   #########
+    #########  ANNUAL CALCULATIONS   #########
+
+    def check_tabella_year(self):
+
+        esiste_tabella = "SELECT '"+ self.schema + ".sparc_annual_pop'::regclass"
+        connection_string = "dbname=%s user=%s password=%s" % (self.dbname, self.user,self.password)
+        conn_check = psycopg2.connect(connection_string)
+        cur_check = conn_check.cursor()
+
+        try:
+            cur_check.execute(esiste_tabella)
+            return "exists"
+        except psycopg2.ProgrammingError as laTabellaNonEsiste:
+            #descrizione_errore = laTabellaNonEsiste.pgerror
+            codice_errore = laTabellaNonEsiste.pgcode
+            #return descrizione_errore, codice_errore
+            return codice_errore
+
+        cur_check.close()
+        conn_check.close()
+
+    def create_sparc_population_annual(self):
+
+        SQL = "CREATE TABLE %s.%s %s %s;"
+        campi = """(
+              id serial NOT NULL,
+              iso3 character(3),
+              adm0_name character(120),
+              adm0_code character(12),
+              adm1_code character(12),
+              adm1_name character(120),
+              adm2_code character(12),
+              adm2_name character(120),
+              rp25 integer,
+              rp50 integer,
+              rp100 integer,
+              rp200 integer,
+              rp500 integer,
+              rp1000 integer,"""
+        constraint = "CONSTRAINT pk_annual_pop PRIMARY KEY (id));"
+
+        try:
+            comando = SQL % (self.schema, 'sparc_annual_pop', campi, constraint)
+            self.cur.execute(comando)
+            print "Annual Population Table Created"
+        except psycopg2.Error as createErrore:
+            descrizione_errore = createErrore.pgerror
+            codice_errore = createErrore.pgcode
+            print descrizione_errore, codice_errore
+
+    def collect_annual_data_byRP_from_dbf_country(self):
+
+        contatore_si = 0
+        lista_si_dbf = []
+
+        direttorio = self.proj_dir + self.paese
+        dct_valori_inondazione_annuale = {}
+        for direttorio_principale, direttorio_secondario, file_vuoto in os.walk(direttorio):
+            if direttorio_principale != direttorio:
+                paese = direttorio_principale.split("/")[5].split("\\")[0]
+                admin = direttorio_principale.split(paese)[1][1:]
+                files_dbf = glob.glob(direttorio_principale + "/*.dbf")
+                for file in files_dbf:
+                    fileName, fileExtension = os.path.splitext(file)
+                    if 'stat' in fileName:
+                        contatore_si += 1
+                        lista_si_dbf.append(direttorio_principale)
+                        try:
+                            filecompleto = fileName + ".dbf"
+                            tabella = dbf.Table(filecompleto)
+                            tabella.open()
+                            dct_valori_inondazione_annuale[admin] = {}
+                            for recordio in tabella:
+                                if recordio.value > 0:
+                                    dct_valori_inondazione_annuale[admin][recordio.value] = recordio.sum
+                        except:
+                            pass
+
+        lista_stat_dbf = [25, 50, 100, 200, 500, 1000]
+        for valore in dct_valori_inondazione_annuale.items():
+            quanti_rp = len(valore[1].keys())
+            if quanti_rp < 6:
+                for rp in lista_stat_dbf:
+                    if rp not in valore[1].keys():
+                        dct_valori_inondazione_annuale[valore[0]][rp] = 0
+
+        return contatore_si,lista_si_dbf, dct_valori_inondazione_annuale
+
+    def process_dct_annuali(self,adms, dct_valori_inondazione_annuale):
+
+        lista = []
+        for adm in adms:
+            #print adm
+            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_name, adm2_code FROM sparc_population_month WHERE adm2_code = '" + adm + "' AND adm0_name = '" + self.paese + "';"
+            #print sql
+            self.cur.execute(sql)
+            risultati = self.cur.fetchall()
+            lista.append(risultati)
+
+        dct_valori_amministrativi = {}
+        for indice in range(0, len(lista)):
+            radice_dct = lista[indice][0][6].strip()
+            dct_valori_amministrativi[radice_dct] = {}
+            dct_valori_amministrativi[radice_dct]["iso3"] = str(lista[indice][0][0].strip())
+            dct_valori_amministrativi[radice_dct]["adm0_name"] = str(lista[indice][0][1].strip())
+            dct_valori_amministrativi[radice_dct]["adm0_code"] = str(lista[indice][0][2].strip())
+            dct_valori_amministrativi[radice_dct]["adm1_code"] = str(lista[indice][0][3].strip())
+            dct_valori_amministrativi[radice_dct]["adm1_name"] = str(lista[indice][0][4].strip())
+            dct_valori_amministrativi[radice_dct]["adm2_name"] = str(lista[indice][0][5].strip())
+            dct_valori_amministrativi[radice_dct]["adm2_code"] = str(lista[indice][0][6].strip())
+        #print dct_valori_amministrativi
+
+
+        lista_rp = [25, 50, 100, 200, 500, 1000]
+        for valore in dct_valori_inondazione_annuale.items():
+            quanti_rp = len(valore[1].keys())
+            if quanti_rp < 6:
+                for rp in lista_rp:
+                    if rp not in valore[1].keys():
+                        dct_valori_inondazione_annuale[valore[0]][rp] = 0
+
+        linee =[]
+        for amministrativa_dct_amministrativi in dct_valori_amministrativi.items():
+            adm2_amministrativa = amministrativa_dct_amministrativi[0]
+            for amministrativa_dct_inondazione in dct_valori_inondazione_annuale.items():
+                if amministrativa_dct_inondazione[0].split("_")[1] == adm2_amministrativa:
+                    linee.append(str(amministrativa_dct_amministrativi[1]['iso3']).upper() + "','" + str(amministrativa_dct_amministrativi[1]['adm0_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm0_code'] +
+                                 ",'" + str(amministrativa_dct_amministrativi[1]['adm1_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm1_code'] +
+                                 "," + amministrativa_dct_amministrativi[1]['adm2_code'] + ",'" + adm2_amministrativa +
+                                 "'," + str(amministrativa_dct_inondazione[1][25]) + "," + str(amministrativa_dct_inondazione[1][50]) +
+                                 "," + str(amministrativa_dct_inondazione[1][100]) + "," + str(amministrativa_dct_inondazione[1][200]) +
+                                 "," + str(amministrativa_dct_inondazione[1][500]) + "," + str(amministrativa_dct_inondazione[1][1000]))
+        lista_comandi = []
+        for linea in linee:
+             inserimento = "INSERT INTO " + "public.sparc_annual_pop" + \
+                           " (iso3,adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name,rp25,rp50,rp100,rp200,rp500,rp1000)" \
+                           "VALUES('" + linea + ");"
+             lista_comandi.append(inserimento)
+
+        return lista_comandi
+
+    def inserisci_valori_dbfs(self,ritornati_passati):
+
+        for ritornato in ritornati_passati:
+            self.cur.execute(ritornato)
+
+    #########  COMMON TASKS   #########
+    #########  COMMON TASKS   #########
+    #########  COMMON TASKS   #########
+
+    def all_country_db(self):
+
+        self.cur = self.conn.cursor()
+        comando = "SELECT DISTINCT adm0_name FROM sparc_gaul_wfp_iso;"
+
+        try:
+            self.cur.execute(comando)
+        except psycopg2.ProgrammingError as laTabellaNonEsiste:
+            descrizione_errore = laTabellaNonEsiste.pgerror
+            codice_errore = laTabellaNonEsiste.pgcode
+            print descrizione_errore, codice_errore
+            return codice_errore
+
+        paesi = []
+        for paese in self.cur:
+            paesi.append(paese[0])
+        return sorted(paesi)
 
     def salva_cambi(self):
         try:
