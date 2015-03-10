@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*
-
-
 import dbf
 import unicodedata
 import re
@@ -20,7 +18,7 @@ class ProjectDrought(object):
 
     def __init__(self, dbname, user, password):
 
-        self.proj_dir = "c:/data/tools/sparc/drgt_prj/"
+        self.proj_dir = "c:/data/tools/sparc/projects/drought/"
         self.shape_countries = "c:/data/tools/sparc/input_data/gaul/gaul_wfp_iso.shp"
         self.campo_nome_paese = "ADM0_NAME"
         self.campo_iso_paese = "ADM0_CODE"
@@ -46,9 +44,6 @@ class ProjectDrought(object):
 
         self.cur = self.conn.cursor()
 
-        self.dirOutPaese = ""
-        self.dirOut = ""
-
         self.drought_monthly_tifs_dir = "C:/data/tools/sparc/input_data/drought/DSIMonthlyFreq_tiff/"
         self.drought_seasonal_tifs_dir = "C:/data/tools/sparc/input_data/drought/SSNMonthly_tiff/"
 
@@ -60,9 +55,9 @@ class ProjectDrought(object):
         self.drought_seasonal_tifs = glob.glob("*.tif")
         #print self.drought_seasonal_tifs
 
+    def lista_admin2(self, paese):
 
-    def lista_admin2(self,paese):
-
+        ProjectDrought.paese = paese
         country_capitalized = paese.capitalize()
         self.layer.SetAttributeFilter(self.campo_nome_paese + " = '" + country_capitalized + "'")
 
@@ -97,6 +92,28 @@ class ProjectDrought(object):
 
         return lista_admin2, listone
 
+    def livelli_amministrativi_0_1(self, code_admin):
+
+        comando = "SELECT iso2,iso3,adm0_code,adm0_name,adm1_name,adm1_code FROM sparc_gaul_wfp_iso WHERE adm2_code=" + str(code_admin) + ";"
+        self.cur.execute(comando)
+        for row in self.cur:
+            ProjectDrought.ISO2_code = row[0]
+            ProjectDrought.ISO3_code = row[1]
+            ProjectDrought.ADM0_GAUL_code = row[2]
+            ProjectDrought.ADM0_GAUL_name = row[3]
+            ProjectDrought.ADM1_GAUL_name = row[4]
+            ProjectDrought.ADM1_GAUL_code = row[5]
+
+        dict_all_codes = {}
+        dict_all_codes[code_admin] = {}
+        dict_all_codes[code_admin]['iso2'] = ProjectDrought.ISO2_code
+        dict_all_codes[code_admin]['iso3'] = ProjectDrought.ISO3_code
+        dict_all_codes[code_admin]['adm0_code'] = ProjectDrought.ADM0_GAUL_code
+        dict_all_codes[code_admin]['adm0_name'] = ProjectDrought.ADM0_GAUL_name
+        dict_all_codes[code_admin]['adm1_code'] = ProjectDrought.ADM1_GAUL_code
+        dict_all_codes[code_admin]['adm1_name'] = ProjectDrought.ADM1_GAUL_name
+
+        return dict_all_codes
 
     def creazione_struttura(self, admin_name, adm_code):
 
@@ -125,7 +142,7 @@ class ProjectDrought(object):
 
 class HazardAssessmentDrought(ProjectDrought):
 
-    def estrazione_poly_admin(self):
+    def estrazione_poly_admin(self, paese, name_admin, code):
 
         filter_field_name = '"' + self.campo_nome_paese + "," + self.campo_iso_paese + "," + self.campo_nome_admin1 + "," + \
                             self.campo_iso_admin1 + "," + self.campo_nome_admin + "," + self.campo_iso_admin + '"'
@@ -136,10 +153,10 @@ class HazardAssessmentDrought(ProjectDrought):
         inLayer = inDataSource.GetLayer()
         inLayerProj = inLayer.GetSpatialRef()
 
-        inLayer.SetAttributeFilter("ADM2_CODE=" + str(self.code))
+        inLayer.SetAttributeFilter("ADM2_CODE=" + str(code))
 
         # Create the output LayerS
-        outShapefile = os.path.join(self.dirOut + self.admin + ".shp")
+        outShapefile = os.path.join(self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin + ".shp")
         outDriver = ogr.GetDriverByName("ESRI Shapefile")
 
         # Remove output shapefile if it already exists
@@ -165,7 +182,6 @@ class HazardAssessmentDrought(ProjectDrought):
 
         # Add features to the ouput Layer
         for inFeature in inLayer:
-
             # Create output Feature
             outFeature = ogr.Feature(outLayerDefn)
 
@@ -189,59 +205,46 @@ class HazardAssessmentDrought(ProjectDrought):
         outDataSource.Destroy()
         return "Admin extraction......"
 
-    def conversione_vettore_raster_admin(self):
+    def cur_rasters(self, paese, name_admin, code):
 
         global admin_vect
-        admin_vect = self.dirOut + self.admin + ".shp"
+        admin_vect = self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin + ".shp"
+        print admin_vect
 
-        global admin_rast
-        if len(self.admin) > 5:
-            admin = self.admin[0:3]
-        admin_rast = self.dirOut + self.admin + "_rst.tif"
+        ProjectDrought.cur = self.conn.cursor()
+        comando = "SELECT c.name,c.iso2,c.iso3,a.area_name FROM SPARC_wfp_countries c " \
+                  "INNER JOIN SPARC_wfp_areas a " \
+                  "ON c.wfp_area = a.area_id WHERE c.name = '" + paese + "';"
+        ProjectDrought.cur.execute(comando)
+        for row in ProjectDrought.cur:
+            self.wfp_area = str(row[3]).strip()
+            self.iso3 = row[2]
 
-        try:
-            admin_rast = arcpy.PolygonToRaster_conversion(admin_vect, "ADM2_CODE", admin_rast, "CELL_CENTER", "NONE", 0.0008333)
-        except Exception as e:
-            print e.message
+        #print self.wfp_area, self.iso3
 
-        return "Raster Created...."
-
-    def taglio_raster_popolazione(self):
-
-        global admin_vect
-        admin_vect = self.dirOut + self.admin + ".shp"
+        if os.path.isfile("C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "13.tif"):
+            self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "13.tif" #popmap10.tif"
+        else:
+            print "No Population Raster......"
+            self.population_raster = "None"
 
         #CUT and SAVE Population within the admin2 area
         if self.population_raster!= "None":
             # Process: Extract by Mask
-
-            lscan_out = self.dirOut + self.admin + "_pop.tif"
-            arcpy.gp.ExtractByMask_sa(self.population_raster, admin_vect,lscan_out)
-
-            #lscan_out_rst = arcpy.Raster(self.population_raster) * arcpy.Raster(admin_rast)
-            #lscan_out_rst.save(lscan_out)
-
-            return "sipop"
+            lscan_out = self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin + "_pop.tif"
+            arcpy.gp.ExtractByMask_sa(self.population_raster, admin_vect, lscan_out)
+            contatore = 1
+            for raster in self.drought_monthly_tifs:
+                rst_file = self.drought_monthly_tifs_dir + raster
+                try:
+                    drought_out = self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin + "_drmo" + str(contatore) + ".tif"
+                    print drought_out
+                    arcpy.gp.ExtractByMask_sa(arcpy.Raster(rst_file), admin_vect, drought_out )
+                    contatore += 1
+                except:
+                    return "No Drought Raster"
         else:
-            return "nopop"
-
-    def taglio_raster_inondazione_aggregato(self):
-
-        #CUT and SAVE Flooded areas within the admin2 area
-        try:
-
-            flood_out = self.dirOut + self.admin + "_agg.tif"
-            arcpy.gp.ExtractByMask_sa(self.flood_aggregated, admin_vect,flood_out)
-        except:
-            pass
-            return "NoFloodRaster"
-
-            arcpy.CalculateStatistics_management(flood_out)
-        try:
-            return "Flood"
-        except:
-            pass
-            return "NoFlood"
+            return "Raster Problems"
 
     def calcolo_statistiche_zone_inondazione(self):
 

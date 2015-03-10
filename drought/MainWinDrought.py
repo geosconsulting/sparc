@@ -26,26 +26,26 @@ class AppSPARCDrought:
         frame.pack_propagate(0)
         frame.pack()
 
-        self.raccogli_paesi_db()
+        self.collect_codes_country_level()
         self.box_value_adm0 = StringVar()
         self.box_adm0 = ttk.Combobox(frame, textvariable= self.box_value_adm0)
         self.box_adm0['values'] = self.lista_paesi
         self.box_adm0.current(0)
         self.box_adm0.pack(side=LEFT)
 
-        self.button = Button(frame, text="Drought Assessment", fg="red", command=self.raccogli_dati_amministrativi).pack(side=LEFT)
+        self.button = Button(frame, text="Drought Assessment", fg="red", command=self.collect_codes_administrative_level).pack(side=LEFT)
 
         root = Tk()
         root.title("SPARC Console")
         self.area_messaggi = Text(root, height=15, width=60, background="black", foreground="green")
         self.area_messaggi.pack()
 
-    def raccogli_paesi_db(self):
+    def collect_codes_country_level(self):
 
         paesi = completeDrought.ManagePostgresDBDrought(self.dbname, self.user, self.password)
         self.lista_paesi = paesi.all_country_db()
 
-    def raccogli_dati_amministrativi(self):
+    def collect_codes_administrative_level(self):
 
         paese = self.box_value_adm0.get()
         self.area_messaggi.delete(1.0, END)
@@ -53,34 +53,33 @@ class AppSPARCDrought:
         aree_amministrative = completeDrought.ManagePostgresDBDrought(self.dbname, self.user, self.password)
         lista_admin2 = aree_amministrative.lista_admin2(paese)
 
-        self.area_messaggi.insert(INSERT, lista_admin2)
+        #print lista_admin2
 
+        for aministrazione in lista_admin2[1].iteritems():
 
+            code_admin = aministrazione[0]
+            nome_admin = aministrazione[1]['name_clean']
 
-        #lista_amministrazioni = valori_amministrativi.lista_admin2()[1]
+            all_codes = aree_amministrative.livelli_amministrativi_0_1(code_admin)
+            #self.area_messaggi.insert(INSERT, all_codes)
 
-        # for aministrazione in lista_amministrazioni.iteritems():
-        #
-        #     code_admin = aministrazione[0]
-        #     nome_admin = aministrazione[1]['name_clean']
-        #
-        #     valori_amministrativi.livelli_amministrativi_0_1(code_admin)
-        #
-        #     valori_amministrativi.creazione_struttura(nome_admin)
-        #     newHazardAssessment = completeDrought.HazardAssessmentCountry(paese, nome_admin, code_admin, self.dbname, self.user, self.password)
-        #     newHazardAssessment.estrazione_poly_admin()
-        #     newHazardAssessment.conversione_vettore_raster_admin()
-        #     if newHazardAssessment.taglio_raster_popolazione()== "sipop":
-        #         pass
-        #         #print "Population clipped...."
-        #     elif newHazardAssessment.taglio_raster_popolazione()== "nopop":
-        #         print "Population raster not yet released...."
-        #         sys.exit()
-        #     esiste_flood = newHazardAssessment.taglio_raster_inondazione_aggregato()
-        #     if esiste_flood == "Flood":
-        #         newHazardAssessment.calcolo_statistiche_zone_inondazione()
-        #     else:
-        #         pass
+            aree_amministrative.creazione_struttura(nome_admin, code_admin)
+            newDroughtAssessment = completeDrought.HazardAssessmentDrought(self.dbname, self.user, self.password)
+            newDroughtAssessment.estrazione_poly_admin(paese, nome_admin, code_admin)
+
+            section_pop_raster_cut = newDroughtAssessment.cur_rasters(paese,nome_admin, code_admin)
+
+            if section_pop_raster_cut == "sipop":
+                #pass
+                print "Population clipped...."
+            elif section_pop_raster_cut == "nopop":
+                print "Population raster not yet released...."
+                sys.exit()
+
+            # if esiste_flood == "Drougtht":
+            #     newDroughtAssessment.calcolo_statistiche_zone_inondazione()
+            # else:
+            #     pass
 
     def scrittura_dati(self,paese):
 
@@ -100,20 +99,6 @@ class AppSPARCDrought:
             scrittura_tabelle.inserisci_valori_calcolati()
         scrittura_tabelle.salva_cambi()
         scrittura_tabelle.close_connection()
-
-    def create_project(self):
-
-        paese = self.box_value_adm0.get()
-        admin = self.box_value_adm2.get()
-
-        for chiave_area in paesi_ritornati[1].iteritems():
-            if chiave_area[1]['name_orig'] == admin:
-               iso_global = chiave_area[0]
-               global admin_global
-               admin_global = chiave_area[1]['name_clean']
-               self.area_messaggi.insert(INSERT, "Area ISOcode " + str(iso_global) + " modified name " + admin_global + "\n")
-        #ut3 = us.UtilitieSparc(paese, admin_global)
-        #self.area_messaggi.insert(INSERT, ut3.creazione_struttura(admin_global))
 
     def national_calc_drought(self):
 
