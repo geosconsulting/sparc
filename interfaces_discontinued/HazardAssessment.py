@@ -2,22 +2,25 @@
 
 #Standard Modules
 import collections
-from osgeo import gdal, ogr
+import os
+import sys
+
+from osgeo import ogr
 import matplotlib.pyplot as plt
 import pylab
 import numpy as np
 import scipy.interpolate
 import scipy.optimize
 from scipy.interpolate import interp1d
-import os
-import sys
 import arcpy
+
 arcpy.CheckOutExtension("spatial")
 from arcpy import env
 env.overwriteOutput = "true"
 
 #Custom Modules
-import UtilitieSparc as us
+from interfaces_discontinued import UtilitieSparc as us
+
 
 class HazardAssessment(object):
 

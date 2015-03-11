@@ -205,11 +205,33 @@ class HazardAssessmentDrought(ProjectDrought):
         outDataSource.Destroy()
         return "Admin extraction......"
 
+    def statistics_drought_zones(self):
+
+        pop_out = arcpy.Raster(self.lscan_cut_adm2)
+        scrivi_qui = arcpy.Describe(pop_out).path
+        print "dove scrivo",scrivi_qui
+        scrivi_questo = str(pop_out).split("/")[7].split("_")[0]
+        print "cosa scrivo",scrivi_questo
+        #one or both raster could be empty (no flood in polygon) I chech that
+        sum_val_pop = int(arcpy.GetRasterProperties_management(pop_out, "UNIQUEVALUECOUNT")[0])
+        for dr_temp in self.adm2_drought_months:
+            contatore = str(dr_temp).split("_")[2].split(".")[0]
+            dr_out = arcpy.Raster(dr_temp)
+            sum_val_fld = int(arcpy.GetRasterProperties_management(dr_out, "UNIQUEVALUECOUNT")[0])
+            pop_stat_dbf = scrivi_qui + "/" + str(scrivi_questo).split("_")[0] + str(contatore) + "_pop_stat.dbf"
+            if sum_val_fld > 0 and sum_val_pop > 0:
+                print pop_stat_dbf
+                arcpy.gp.ZonalStatisticsAsTable_sa(dr_out, "VALUE", pop_out, pop_stat_dbf , "DATA", "SUM")
+            else:
+                template_dbf = "C:/data/tools/sparc/input_data/drought/template_pop_stat.dbf"
+                tabula = str(scrivi_questo).split("_")[0] + str(contatore) + "_pop_stat.dbf"
+                arcpy.CreateTable_management(scrivi_qui, tabula, template_dbf)
+        return "People in drought areas....\n"
+
     def cur_rasters(self, paese, name_admin, code):
 
         global admin_vect
         admin_vect = self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin + ".shp"
-        print admin_vect
 
         ProjectDrought.cur = self.conn.cursor()
         comando = "SELECT c.name,c.iso2,c.iso3,a.area_name FROM SPARC_wfp_countries c " \
@@ -220,54 +242,34 @@ class HazardAssessmentDrought(ProjectDrought):
             self.wfp_area = str(row[3]).strip()
             self.iso3 = row[2]
 
-        #print self.wfp_area, self.iso3
-
         if os.path.isfile("C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "13.tif"):
             self.population_raster = "C:/data/tools/sparc/input_data/population/" + self.wfp_area + "/" + self.iso3 + "-POP/" + self.iso3 + "13.tif" #popmap10.tif"
         else:
             print "No Population Raster......"
             self.population_raster = "None"
 
-        #CUT and SAVE Population and Drought within the admin2 area
+        #CUT and SAVE Population and Drought Month/Season for each admin2 area
+        self.adm2_drought_months = []
         if self.population_raster!= "None":
             # Process: Extract by Mask
-            lscan_out = self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin + "_pop.tif"
+            self.lscan_cut_adm2 = self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin + "_pop.tif"
             try:
-                arcpy.gp.ExtractByMask_sa(self.population_raster, admin_vect, lscan_out)
+                arcpy.gp.ExtractByMask_sa(self.population_raster, admin_vect, self.lscan_cut_adm2)
                 contatore = 1
                 for raster in self.drought_monthly_tifs:
                     rst_file = self.drought_monthly_tifs_dir + raster
                     try:
                         drought_out = self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin + "_drmo" + str(contatore) + ".tif"
-                        print drought_out
+                        self.adm2_drought_months.append(drought_out)
                         arcpy.gp.ExtractByMask_sa(arcpy.Raster(rst_file), admin_vect, drought_out )
                         contatore += 1
                     except:
                         return "No Drought Raster"
             except:
                 return "No Population Raster"
+            self.statistics_drought_zones()
         else:
             return "Problem cutting Population Raster"
-
-    def calcolo_statistiche_zone_inondazione(self):
-
-        flood_out = arcpy.Raster(self.dirOut + self.admin + "_agg.tif")
-        pop_out = arcpy.Raster(self.dirOut + self.admin + "_pop.tif")
-
-        #one or both raster could be empty (no flood in polygon) I chech that
-        sum_val_fld = int(arcpy.GetRasterProperties_management(flood_out, "UNIQUEVALUECOUNT")[0])
-        sum_val_pop = int(arcpy.GetRasterProperties_management(pop_out, "UNIQUEVALUECOUNT")[0])
-
-        if sum_val_fld > 0 and sum_val_pop > 0:
-            pop_stat_dbf = self.dirOut + self.admin.lower() + "_pop_stat.dbf"
-            arcpy.gp.ZonalStatisticsAsTable_sa(flood_out, "Value", pop_out, pop_stat_dbf , "DATA", "ALL")
-        else:
-            template_dbf = "C:/data/tools/sparc/input_data/flood/template_pop_stat.dbf"
-            pop_stat_dbf = self.admin.lower() + "_pop_stat.dbf"
-            print self.dirOut, pop_stat_dbf
-            arcpy.CreateTable_management(self.dirOut, pop_stat_dbf, template_dbf)
-
-        return "People in flood prone areas....\n"
 
 class ManagePostgresDBDrought(ProjectDrought):
 

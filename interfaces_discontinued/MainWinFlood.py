@@ -7,7 +7,7 @@ import ttk
 
 from interfaces_discontinued import HazardAssessment as ha
 import MonthlyDistribution as monDist
-import UtilitieSparc as us
+import interfaces_discontinued.UtilitieSparc as us
 
 
 class AppSPARC:
@@ -129,9 +129,9 @@ class AppSPARC:
 
         paese = self.box_value_adm0.get()
 
-        import CountryCalculations
-        CountryCalculations.processo_dati(paese)
-        CountryCalculations.scrittura_dati(paese)
+        import CountryCalculationsFlood
+        CountryCalculationsFlood.processo_dati(paese)
+        CountryCalculationsFlood.scrittura_dati(paese)
 
 root = Tk()
 root.title("SPARC Flood Assessment")

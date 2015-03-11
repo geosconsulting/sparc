@@ -158,7 +158,7 @@ class Progetto(object):
 
         return "Project created......\n"
 
-class HazardAssessmentCountry(Progetto):
+class HazardAssessmentCountryFlood(Progetto):
 
     def estrazione_poly_admin(self):
 
@@ -298,7 +298,7 @@ class HazardAssessmentCountry(Progetto):
 
         return "People in flood prone areas....\n"
 
-class MonthlyAssessmentCountry(Progetto):
+class MonthlyAssessmentCountryFlood(Progetto):
 
     monthly_precipitation_dir = "C:/data/tools/sparc/input_data/precipitation/"
 

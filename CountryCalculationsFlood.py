@@ -30,7 +30,7 @@ def processo_dati(paese):
         generazione_di_fenomeni.livelli_amministrativi_0_1(code_admin)
 
         generazione_di_fenomeni.creazione_struttura(nome_admin,code_admin)
-        newHazardAssessment = completeSparc.HazardAssessmentCountry(paese, nome_admin, code_admin,
+        newHazardAssessment = completeSparc.HazardAssessmentCountryFlood(paese, nome_admin, code_admin,
                                                                     dbname, user, password)
         newHazardAssessment.estrazione_poly_admin()
 
@@ -48,7 +48,7 @@ def processo_dati(paese):
             newHazardAssessment.calcolo_statistiche_zone_inondazione()
         else:
             pass
-        newMonthlyAssessment = completeSparc.MonthlyAssessmentCountry(paese, nome_admin, code_admin,
+        newMonthlyAssessment = completeSparc.MonthlyAssessmentCountryFlood(paese, nome_admin, code_admin,
                                                                       dbname, user, password)
         #newMonthlyAssessment.cut_monthly_precipitation_rasters()
         newMonthlyAssessment.valore_precipitation_reliability_centroid()
