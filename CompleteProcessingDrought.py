@@ -44,8 +44,8 @@ class ProjectDrought(object):
 
         self.cur = self.conn.cursor()
 
-        self.drought_monthly_tifs_dir = "C:/data/tools/sparc/input_data/drought/DSIMonthlyFreq_tiff/"
-        self.drought_seasonal_tifs_dir = "C:/data/tools/sparc/input_data/drought/SSNMonthly_tiff/"
+        self.drought_monthly_tifs_dir = "C:/data/tools/sparc/input_data/drought/resampled_month/"
+        self.drought_seasonal_tifs_dir = "C:/data/tools/sparc/input_data/drought/resampled_seasonal/"
 
         os.chdir(self.drought_monthly_tifs_dir)
         self.drought_monthly_tifs = glob.glob("*.tif")

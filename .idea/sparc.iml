@@ -13,6 +13,7 @@
       <excludeFolder url="file://$MODULE_DIR$/conflicts/tools" />
       <excludeFolder url="file://$MODULE_DIR$/conflicts/wfp" />
       <excludeFolder url="file://$MODULE_DIR$/db_backup" />
+      <excludeFolder url="file://$MODULE_DIR$/drought_test_data" />
       <excludeFolder url="file://$MODULE_DIR$/input_data" />
       <excludeFolder url="file://$MODULE_DIR$/output" />
       <excludeFolder url="file://$MODULE_DIR$/projects" />

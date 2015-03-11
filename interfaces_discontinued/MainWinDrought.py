@@ -2,11 +2,9 @@
 # -*- coding: utf-8 -*-
 __author__ = 'fabio.lana'
 
-import CompleteProcessingDrought as completeDrought
-
-import os
-import sys
 from osgeo import ogr
+
+import CompleteProcessingDrought as completeDrought
 ogr.UseExceptions()
 
 from Tkinter import *

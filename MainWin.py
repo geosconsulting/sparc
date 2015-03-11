@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 __author__ = 'fabio.lana'
 
-import HazardAssessment as ha
-import MonthlyDistribution as monDist
+import CompleteProcessingDrought as completeDrought
 import UtilitieSparc as us
 from Tkinter import *
 import ttk
@@ -12,7 +11,13 @@ class AppSPARC:
 
     def __init__(self, master):
 
-        frame = Frame(master, height=32, width=1000)
+
+        self.dbname = "geonode-imports"
+        self.user = "geonode"
+        self.password = "geonode"
+        self.lista_amministrazioni = None
+
+        frame = Frame(master, height=32, width=375)
         frame.pack_propagate(0)
         frame.pack()
 
@@ -21,109 +26,54 @@ class AppSPARC:
         self.box_value_adm0 = StringVar()
         self.box_adm0 = ttk.Combobox(frame, textvariable = self.box_value_adm0)
         self.box_adm0['values'] = paesi
-        self.box_adm0.current(36)
+        self.box_adm0.current(0)
         self.box_adm0.pack(side=LEFT)
 
-        self.emdat = Button(frame, text="EM-DAT Data",  fg="red",command=self.emdat)
-        self.emdat.pack(side=LEFT)
-        self.button = Button(frame, text="National Assessment", fg="red", command=self.national_calc).pack(side=LEFT)
-        self.box_value_adm2 = StringVar()
-        self.box_adm2 = ttk.Combobox(frame, textvariable = self.box_value_adm2)
-        self.box_adm2['values'] = ' '
-        self.box_adm2.pack(side=LEFT)
+        self.button = Button(frame, text="Flood Assessment", fg="blue", command=self.national_calc_flood).pack(side=LEFT)
+        self.button = Button(frame, text="Drought Assessment", fg="maroon", command=self.national_calc_drought).pack(side=LEFT)
 
-        self.sub_select = Button(frame, text="Fetch Admin", fg="blue",command=self.sub_select)
-        self.sub_select.pack(side=LEFT)
-        self.create_structure = Button(frame,text="Create Project",fg="blue", command = self.create_project)
-        self.create_structure.pack(side=LEFT)
-        self.button = Button(frame, text="Annual Hazard", fg="blue", command=self.hazard_assessment).pack(side=LEFT)
-        self.button = Button(frame, text="Monthly Probability", fg="blue", command=self.monthly_distribution).pack(side=LEFT)
-        self.button = Button(frame, text="Vulnerability", fg="blue", command=frame.quit).pack(side=LEFT)
-        self.button = Button(frame, text="Next Step", fg="blue", command=frame.quit).pack(side=LEFT)
 
         root = Tk()
         root.title("SPARC Console")
         self.area_messaggi = Text(root, height=15, width=60, background="black", foreground="green")
         self.area_messaggi.pack()
 
-    def sub_select(self):
-
-        self.box_adm2.set(" ")
-        paese_scelto = self.box_value_adm0.get()
-        ut2 = us.UtilitieSparc(paese_scelto, "")
-        global paesi_ritornati
-        paesi_ritornati = ut2.lista_admin2(paese_scelto)
-        self.box_adm2['values'] = sorted(paesi_ritornati[0])
-
-    def emdat(self):
+    def national_calc_drought(self):
 
         paese = self.box_value_adm0.get()
-        nuova_geocodifica = us.GeocodingEmDat(paese)
-        if nuova_geocodifica.geolocate_accidents() == "Geocoded already!!":
-            self.area_messaggi.insert(INSERT, "Geocoded already!!\n")
-            nuova_geocodifica.plot_mappa()
-        else:
-            nuova_geocodifica.create_validated_coords()
-            self.area_messaggi.insert(INSERT, "Geocoding Terminated\n")
-            nuova_geocodifica.creazione_file_shp()
-            self.area_messaggi.insert(INSERT, "Shapefile Created\n")
-            nuova_geocodifica.create_heat_map()
-            self.area_messaggi.insert(INSERT, "HeatMap Created\n")
+        self.area_messaggi.delete(1.0, END)
 
-    def create_project(self):
+        aree_amministrative = completeDrought.ManagePostgresDBDrought(self.dbname, self.user, self.password)
+        lista_admin2 = aree_amministrative.lista_admin2(paese)
 
-        paese = self.box_value_adm0.get()
-        admin = self.box_value_adm2.get()
+        #print lista_admin2
 
-        for chiave_area in paesi_ritornati[1].iteritems():
-            if chiave_area[1]['name_orig'] == admin:
-               iso_global = chiave_area[0]
-               global admin_global
-               admin_global = chiave_area[1]['name_clean']
-               self.area_messaggi.insert(INSERT, "Area ISOcode " + str(iso_global) + " modified name " + admin_global + "\n")
-        ut3 = us.UtilitieSparc(paese, admin_global)
-        print admin_global
-        self.area_messaggi.insert(INSERT, ut3.creazione_struttura(admin_global))
+        for aministrazione in lista_admin2[1].iteritems():
 
-    def hazard_assessment(self):
+            code_admin = aministrazione[0]
+            nome_admin = aministrazione[1]['name_clean']
 
-        paese = self.box_value_adm0.get()
+            all_codes = aree_amministrative.livelli_amministrativi_0_1(code_admin)
+            #self.area_messaggi.insert(INSERT, all_codes)
 
-        global newHazardAssessment
-        newHazardAssessment = ha.HazardAssessment(paese, admin_global)
-        self.area_messaggi.insert(INSERT, newHazardAssessment.estrazione_poly_admin())
-        self.area_messaggi.insert(INSERT, newHazardAssessment.conversione_vettore_raster_admin())
-        if newHazardAssessment.taglio_raster_popolazione()== "sipop":
-            self.area_messaggi.insert(INSERT, "Population clipped....")
-        elif newHazardAssessment.taglio_raster_popolazione()== "nopop":
-            self.area_messaggi.insert(INSERT, "Population raster not yet released....")
-            sys.exit()
-        self.area_messaggi.insert(INSERT, newHazardAssessment.taglio_raster_inondazione_aggregato())
-        self.area_messaggi.insert(INSERT, newHazardAssessment.taglio_raster_inondazione())
-        self.area_messaggi.insert(INSERT, newHazardAssessment.calcolo_statistiche_zone_indondazione())
-        newHazardAssessment.plot_affected()
-        newHazardAssessment.plot_risk_curve()
-        #newHazardAssessment.plot_risk_interpolation()
-        newHazardAssessment.interpolazione_tempi_ritorno_intermedi()
-        newHazardAssessment.gira_dati()
-        newHazardAssessment.plot_risk_interpolation_linear()
+            aree_amministrative.creazione_struttura(nome_admin, code_admin)
+            newDroughtAssessment = completeDrought.HazardAssessmentDrought(self.dbname, self.user, self.password)
+            newDroughtAssessment.estrazione_poly_admin(paese, nome_admin, code_admin)
 
-    def monthly_distribution(self):
+            section_pop_raster_cut = newDroughtAssessment.cur_rasters(paese,nome_admin, code_admin)
 
-        paese = self.box_value_adm0.get()
+            if section_pop_raster_cut == "sipop":
+                print "Population clipped...."
+            elif section_pop_raster_cut == "nopop":
+                print "Population raster not available...."
+                sys.exit()
 
-        global newMontlhyDistribution
-        newMontlhyDistribution = monDist.MonthlyDistribution(paese,admin_global)
-        #self.area_messaggi.insert(INSERT,newMontlhyDistribution.cut_monthly_rasters())
-        self.area_messaggi.insert(INSERT,newMontlhyDistribution.valore_precipitation_centroid())
-        self.area_messaggi.insert(INSERT,newMontlhyDistribution.analisi_valori_da_normalizzare())
-        self.area_messaggi.insert(INSERT,newMontlhyDistribution.historical_analysis_damages())
-        newMontlhyDistribution.plot_monthly_danni()
-        self.area_messaggi.insert(INSERT,newMontlhyDistribution.population_flood_prone_areas())
-        self.area_messaggi.insert(INSERT, newMontlhyDistribution.calcolo_finale())
-        newMontlhyDistribution.plottalo_bello()
+            # if esiste_flood == "Drougtht":
+            #     newDroughtAssessment.calcolo_statistiche_zone_inondazione()
+            # else:
+            #     pass
 
-    def national_calc(self):
+    def national_calc_flood(self):
 
         paese = self.box_value_adm0.get()
 
@@ -132,7 +82,7 @@ class AppSPARC:
         CountryCalculations.scrittura_dati(paese)
 
 root = Tk()
-root.title("SPARC Flood Assessment")
+root.title("SPARC Flood and Drought Assessment")
 app = AppSPARC(root)
 root.mainloop()
 
