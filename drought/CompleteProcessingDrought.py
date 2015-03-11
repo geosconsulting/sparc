@@ -228,23 +228,26 @@ class HazardAssessmentDrought(ProjectDrought):
             print "No Population Raster......"
             self.population_raster = "None"
 
-        #CUT and SAVE Population within the admin2 area
+        #CUT and SAVE Population and Drought within the admin2 area
         if self.population_raster!= "None":
             # Process: Extract by Mask
             lscan_out = self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin + "_pop.tif"
-            arcpy.gp.ExtractByMask_sa(self.population_raster, admin_vect, lscan_out)
-            contatore = 1
-            for raster in self.drought_monthly_tifs:
-                rst_file = self.drought_monthly_tifs_dir + raster
-                try:
-                    drought_out = self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin + "_drmo" + str(contatore) + ".tif"
-                    print drought_out
-                    arcpy.gp.ExtractByMask_sa(arcpy.Raster(rst_file), admin_vect, drought_out )
-                    contatore += 1
-                except:
-                    return "No Drought Raster"
+            try:
+                arcpy.gp.ExtractByMask_sa(self.population_raster, admin_vect, lscan_out)
+                contatore = 1
+                for raster in self.drought_monthly_tifs:
+                    rst_file = self.drought_monthly_tifs_dir + raster
+                    try:
+                        drought_out = self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin + "_drmo" + str(contatore) + ".tif"
+                        print drought_out
+                        arcpy.gp.ExtractByMask_sa(arcpy.Raster(rst_file), admin_vect, drought_out )
+                        contatore += 1
+                    except:
+                        return "No Drought Raster"
+            except:
+                return "No Population Raster"
         else:
-            return "Raster Problems"
+            return "Problem cutting Population Raster"
 
     def calcolo_statistiche_zone_inondazione(self):
 

@@ -23,7 +23,7 @@ class Progetto(object):
         self.paese = paese
         self.admin = admin
         self.code = code
-        self.proj_dir = "c:/data/tools/sparc/projects/"
+        self.proj_dir = "c:/data/tools/sparc/projects/floods/"
         self.dirOutPaese = self.proj_dir + paese
         self.dirOut = self.proj_dir + paese + "/" + admin + "_" + str(code) + "/"
 

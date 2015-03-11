@@ -70,10 +70,9 @@ class AppSPARCDrought:
             section_pop_raster_cut = newDroughtAssessment.cur_rasters(paese,nome_admin, code_admin)
 
             if section_pop_raster_cut == "sipop":
-                #pass
                 print "Population clipped...."
             elif section_pop_raster_cut == "nopop":
-                print "Population raster not yet released...."
+                print "Population raster not available...."
                 sys.exit()
 
             # if esiste_flood == "Drougtht":
