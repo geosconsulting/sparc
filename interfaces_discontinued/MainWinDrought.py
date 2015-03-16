@@ -49,7 +49,7 @@ class AppSPARCDrought:
         self.area_messaggi.delete(1.0, END)
 
         aree_amministrative = completeDrought.ManagePostgresDBDrought(self.dbname, self.user, self.password)
-        lista_admin2 = aree_amministrative.lista_admin2(paese)
+        lista_admin2 = aree_amministrative.admin_2nd_level_list(paese)
 
         #print lista_admin2
 
@@ -58,14 +58,14 @@ class AppSPARCDrought:
             code_admin = aministrazione[0]
             nome_admin = aministrazione[1]['name_clean']
 
-            all_codes = aree_amministrative.livelli_amministrativi_0_1(code_admin)
+            all_codes = aree_amministrative.administrative_level_0_1_fetch(code_admin)
             #self.area_messaggi.insert(INSERT, all_codes)
 
-            aree_amministrative.creazione_struttura(nome_admin, code_admin)
+            aree_amministrative.file_structure_creation(nome_admin, code_admin)
             newDroughtAssessment = completeDrought.HazardAssessmentDrought(self.dbname, self.user, self.password)
-            newDroughtAssessment.estrazione_poly_admin(paese, nome_admin, code_admin)
+            newDroughtAssessment.extract_poly2_admin(paese, nome_admin, code_admin)
 
-            section_pop_raster_cut = newDroughtAssessment.cur_rasters(paese,nome_admin, code_admin)
+            section_pop_raster_cut = newDroughtAssessment.cut_rasters_drought(paese,nome_admin, code_admin)
 
             if section_pop_raster_cut == "sipop":
                 print "Population clipped...."
@@ -88,13 +88,13 @@ class AppSPARCDrought:
         scrittura_tabelle = completeDrought.ManagePostgresDBDrought(paese, nome_admin, code_admin, dbname, user, password)
 
         if scrittura_tabelle.check_tabella() == '42P01':
-            scrittura_tabelle.create_sparc_population_month()
+            scrittura_tabelle.create_sparc_drought_population_month()
             #scrittura_tabelle.fetch_results()
             #scrittura_tabelle.inserisci_valori_calcolati()
         if scrittura_tabelle.check_tabella() == 'exists':
-            scrittura_tabelle.fetch_results()
-            scrittura_tabelle.inserisci_valori_calcolati()
-        scrittura_tabelle.salva_cambi()
+            scrittura_tabelle.fetch_results_drought_montly_from_txt_file()
+            scrittura_tabelle.insert_monthly_calulated_drought_values()
+        scrittura_tabelle.save_changes()
         scrittura_tabelle.close_connection()
 
     def national_calc_drought(self):

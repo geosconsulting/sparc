@@ -46,7 +46,7 @@ class AppSPARC:
         paese = self.box_value_adm0.get()
 
         aree_amministrative = completeDrought.ManagePostgresDBDrought(self.dbname, self.user, self.password)
-        lista_admin2 = aree_amministrative.lista_admin2(paese)
+        lista_admin2 = aree_amministrative.admin_2nd_level_list(paese)
 
         for aministrazione in lista_admin2[1].iteritems():
 
@@ -56,11 +56,11 @@ class AppSPARC:
             #all_codes = aree_amministrative.livelli_amministrativi_0_1(code_admin)
             #self.area_messaggi.insert(INSERT, all_codes)
 
-            aree_amministrative.creazione_struttura(nome_admin, code_admin)
+            aree_amministrative.file_structure_creation(nome_admin, code_admin)
             newDroughtAssessment = completeDrought.HazardAssessmentDrought(self.dbname, self.user, self.password)
-            newDroughtAssessment.estrazione_poly_admin(paese, nome_admin, code_admin)
+            newDroughtAssessment.extract_poly2_admin(paese, nome_admin, code_admin)
 
-            section_pop_raster_cut = newDroughtAssessment.cur_rasters(paese,nome_admin, code_admin)
+            section_pop_raster_cut = newDroughtAssessment.cut_rasters_drought(paese,nome_admin, code_admin)
 
             if section_pop_raster_cut == "sipop":
                 print "Population clipped...."

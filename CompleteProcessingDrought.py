@@ -55,7 +55,7 @@ class ProjectDrought(object):
         self.drought_seasonal_tifs = glob.glob("*.tif")
         #print self.drought_seasonal_tifs
 
-    def lista_admin2(self, paese):
+    def admin_2nd_level_list(self, paese):
 
         ProjectDrought.paese = paese
         country_capitalized = paese.capitalize()
@@ -92,7 +92,7 @@ class ProjectDrought(object):
 
         return lista_admin2, listone
 
-    def livelli_amministrativi_0_1(self, code_admin):
+    def administrative_level_0_1_fetch(self, code_admin):
 
         comando = "SELECT iso2,iso3,adm0_code,adm0_name,adm1_name,adm1_code FROM sparc_gaul_wfp_iso WHERE adm2_code=" + str(code_admin) + ";"
         self.cur.execute(comando)
@@ -115,7 +115,7 @@ class ProjectDrought(object):
 
         return dict_all_codes
 
-    def creazione_struttura(self, admin_name, adm_code):
+    def file_structure_creation(self, admin_name, adm_code):
 
         os.chdir(self.proj_dir)
         country_low = str(self.paese).lower()
@@ -142,7 +142,7 @@ class ProjectDrought(object):
 
 class HazardAssessmentDrought(ProjectDrought):
 
-    def estrazione_poly_admin(self, paese, name_admin, code):
+    def extract_poly2_admin(self, paese, name_admin, code):
 
         filter_field_name = '"' + self.campo_nome_paese + "," + self.campo_iso_paese + "," + self.campo_nome_admin1 + "," + \
                             self.campo_iso_admin1 + "," + self.campo_nome_admin + "," + self.campo_iso_admin + '"'
@@ -209,26 +209,32 @@ class HazardAssessmentDrought(ProjectDrought):
 
         pop_out = arcpy.Raster(self.lscan_cut_adm2)
         scrivi_qui = arcpy.Describe(pop_out).path
-        print "dove scrivo",scrivi_qui
         scrivi_questo = str(pop_out).split("/")[7].split("_")[0]
-        print "cosa scrivo",scrivi_questo
         #one or both raster could be empty (no flood in polygon) I chech that
         sum_val_pop = int(arcpy.GetRasterProperties_management(pop_out, "UNIQUEVALUECOUNT")[0])
         for dr_temp in self.adm2_drought_months:
-            contatore = str(dr_temp).split("_")[2].split(".")[0]
+            valore_taglio = str(dr_temp.split("/")[-1]).count("_")
+            contatore = str(dr_temp.split("/")[-1]).split("_")[valore_taglio].split(".")[0]
             dr_out = arcpy.Raster(dr_temp)
             sum_val_fld = int(arcpy.GetRasterProperties_management(dr_out, "UNIQUEVALUECOUNT")[0])
-            pop_stat_dbf = scrivi_qui + "/" + str(scrivi_questo).split("_")[0] + str(contatore) + "_pop_stat.dbf"
+            nome_tabella = str(scrivi_questo).split("_")[0]
+            pop_stat_dbf = scrivi_qui + "/" + nome_tabella + "_" + str(contatore) + "_pop_stat.dbf"
             if sum_val_fld > 0 and sum_val_pop > 0:
-                print pop_stat_dbf
-                arcpy.gp.ZonalStatisticsAsTable_sa(dr_out, "VALUE", pop_out, pop_stat_dbf , "DATA", "SUM")
+                try:
+                    arcpy.gp.ZonalStatisticsAsTable_sa(dr_out, "VALUE", pop_out, pop_stat_dbf , "DATA", "SUM")
+                except Exception as e:
+                    print e.message
             else:
                 template_dbf = "C:/data/tools/sparc/input_data/drought/template_pop_stat.dbf"
-                tabula = str(scrivi_questo).split("_")[0] + str(contatore) + "_pop_stat.dbf"
-                arcpy.CreateTable_management(scrivi_qui, tabula, template_dbf)
+                tabula = str(scrivi_questo).split("_")[0] + "_" + str(contatore) + "_pop_stat.dbf"
+                print "nome tabula %s " % tabula
+                try:
+                    arcpy.CreateTable_management(scrivi_qui, tabula, template_dbf)
+                except Exception as e:
+                    print e.message
         return "People in drought areas....\n"
 
-    def cur_rasters(self, paese, name_admin, code):
+    def cut_rasters_drought(self, paese, name_admin, code):
 
         global admin_vect
         admin_vect = self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin + ".shp"
@@ -277,9 +283,9 @@ class ManagePostgresDBDrought(ProjectDrought):
     #########  MONTLHY CALCULATIONS   #########
     #########  MONTLHY CALCULATIONS   #########
 
-    def check_tabella_month(self):
+    def check_if_monthly_table_drought_exists(self):
 
-        esiste_tabella = "SELECT '"+ self.schema + ".sparc_population_month'::regclass"
+        esiste_tabella = "SELECT '"+ self.schema + ".sparc_population_month_drought'::regclass"
         connection_string = "dbname=%s user=%s password=%s" % (self.dbname, self.user,self.password)
         conn_check = psycopg2.connect(connection_string)
         cur_check = conn_check.cursor()
@@ -296,7 +302,7 @@ class ManagePostgresDBDrought(ProjectDrought):
         cur_check.close()
         conn_check.close()
 
-    def fetch_results(self):
+    def fetch_results_drought_montly_from_txt_file(self):
 
         global lista_finale
         lista_finale=[]
@@ -306,7 +312,7 @@ class ManagePostgresDBDrought(ProjectDrought):
             for row in pop_monthly_reader:
                 lista_finale.append(row)
 
-    def leggi_valori_amministrativi(self):
+    def get_all_administrative_values_using_adm2_code(self):
 
         cursor = self.conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
         comando = "SELECT c.name,c.iso2,c.iso3,a.area_name FROM SPARC_wfp_countries c INNER JOIN SPARC_wfp_areas a ON c.wfp_area = a.area_id WHERE c.name = '" + self.paese + "';"
@@ -316,9 +322,9 @@ class ManagePostgresDBDrought(ProjectDrought):
             row_count += 1
             return row[0], row[1], row[2], row[3]
 
-    def cancella_tabella(self):
+    def delete_monthly_drought_table_if_exists(self):
 
-        comando_delete_table = "DROP TABLE " + self.schema + ".sparc_population_month CASCADE;"
+        comando_delete_table = "DROP TABLE " + self.schema + ".sparc_population_month_drought CASCADE;"
         try:
             self.cur.execute(comando_delete_table)
             return "Table deleted"
@@ -326,7 +332,7 @@ class ManagePostgresDBDrought(ProjectDrought):
             errore_delete_tabella = delErrore.pgerror
             return errore_delete_tabella
 
-    def create_sparc_population_month(self):
+    def create_sparc_drought_population_month(self):
 
         SQL = "CREATE TABLE %s.%s %s %s;"
         campi = """(
@@ -355,7 +361,7 @@ class ManagePostgresDBDrought(ProjectDrought):
         constraint = "CONSTRAINT population_month_pkey PRIMARY KEY (id));"
 
         try:
-            comando = SQL % (self.schema, 'sparc_population_month', campi, constraint)
+            comando = SQL % (self.schema, 'sparc_population_month_drought', campi, constraint)
             self.cur.execute(comando)
             print "Monthly Population Split Table Created"
         except psycopg2.Error as createErrore:
@@ -363,10 +369,10 @@ class ManagePostgresDBDrought(ProjectDrought):
             codice_errore = createErrore.pgcode
             print descrizione_errore, codice_errore
 
-    def inserisci_valori_calcolati(self):
+    def insert_monthly_calulated_drought_values(self):
 
         for linea in lista_finale:
-            inserimento = "INSERT INTO " + self.schema + ".sparc_population_month" + \
+            inserimento = "INSERT INTO " + self.schema + ".sparc_population_month_drought" + \
                           " (iso3, adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name," \
                           "rp,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,\"dec\", n_cases)" \
                           "VALUES('" + str(linea[0]) + "','" + linea[1] + "'," + linea[2] + ",'" + linea[3] + "'," \
@@ -382,9 +388,9 @@ class ManagePostgresDBDrought(ProjectDrought):
     #########  ANNUAL CALCULATIONS   #########
     #########  ANNUAL CALCULATIONS   #########
 
-    def check_tabella_year(self):
+    def check_if_yearly_drought_table_exists(self):
 
-        esiste_tabella = "SELECT '"+ self.schema + ".sparc_annual_pop'::regclass"
+        esiste_tabella = "SELECT '"+ self.schema + ".sparc_annual_pop_drought'::regclass"
         connection_string = "dbname=%s user=%s password=%s" % (self.dbname, self.user,self.password)
         conn_check = psycopg2.connect(connection_string)
         cur_check = conn_check.cursor()
@@ -401,7 +407,7 @@ class ManagePostgresDBDrought(ProjectDrought):
         cur_check.close()
         conn_check.close()
 
-    def create_sparc_population_annual(self):
+    def create_sparc_drought_population_annual(self):
 
         SQL = "CREATE TABLE %s.%s %s %s;"
         campi = """(
@@ -422,7 +428,7 @@ class ManagePostgresDBDrought(ProjectDrought):
         constraint = "CONSTRAINT pk_annual_pop PRIMARY KEY (id));"
 
         try:
-            comando = SQL % (self.schema, 'sparc_annual_pop', campi, constraint)
+            comando = SQL % (self.schema, 'sparc_annual_pop_drought', campi, constraint)
             self.cur.execute(comando)
             print "Annual Population Table Created"
         except psycopg2.Error as createErrore:
@@ -466,14 +472,14 @@ class ManagePostgresDBDrought(ProjectDrought):
                     if rp not in valore[1].keys():
                         dct_valori_inondazione_annuale[valore[0]][rp] = 0
 
-        return contatore_si,lista_si_dbf, dct_valori_inondazione_annuale
+        return contatore_si, lista_si_dbf, dct_valori_inondazione_annuale
 
-    def process_dct_annuali(self,adms, dct_valori_inondazione_annuale):
+    def process_dictio_annual(self,adms, dct_valori_inondazione_annuale):
 
         lista = []
         for adm in adms:
             #print adm
-            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_name, adm2_code FROM sparc_population_month WHERE adm2_code = '" + adm + "' AND adm0_name = '" + self.paese + "';"
+            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_name, adm2_code FROM sparc_gaul_wfp_iso WHERE adm2_code = '" + adm + "' AND adm0_name = '" + paese + "';"
             #print sql
             self.cur.execute(sql)
             risultati = self.cur.fetchall()
@@ -481,47 +487,19 @@ class ManagePostgresDBDrought(ProjectDrought):
 
         dct_valori_amministrativi = {}
         for indice in range(0, len(lista)):
-            radice_dct = lista[indice][0][6].strip()
+            radice_dct = lista[indice][0][6]
             dct_valori_amministrativi[radice_dct] = {}
             dct_valori_amministrativi[radice_dct]["iso3"] = str(lista[indice][0][0].strip())
             dct_valori_amministrativi[radice_dct]["adm0_name"] = str(lista[indice][0][1].strip())
-            dct_valori_amministrativi[radice_dct]["adm0_code"] = str(lista[indice][0][2].strip())
-            dct_valori_amministrativi[radice_dct]["adm1_code"] = str(lista[indice][0][3].strip())
+            dct_valori_amministrativi[radice_dct]["adm0_code"] = str(lista[indice][0][2])
+            dct_valori_amministrativi[radice_dct]["adm1_code"] = str(lista[indice][0][3])
             dct_valori_amministrativi[radice_dct]["adm1_name"] = str(lista[indice][0][4].strip())
             dct_valori_amministrativi[radice_dct]["adm2_name"] = str(lista[indice][0][5].strip())
-            dct_valori_amministrativi[radice_dct]["adm2_code"] = str(lista[indice][0][6].strip())
-        #print dct_valori_amministrativi
+            dct_valori_amministrativi[radice_dct]["adm2_code"] = str(lista[indice][0][6])
 
+        #return what????
 
-        lista_rp = [25, 50, 100, 200, 500, 1000]
-        for valore in dct_valori_inondazione_annuale.items():
-            quanti_rp = len(valore[1].keys())
-            if quanti_rp < 6:
-                for rp in lista_rp:
-                    if rp not in valore[1].keys():
-                        dct_valori_inondazione_annuale[valore[0]][rp] = 0
-
-        linee =[]
-        for amministrativa_dct_amministrativi in dct_valori_amministrativi.items():
-            adm2_amministrativa = amministrativa_dct_amministrativi[0]
-            for amministrativa_dct_inondazione in dct_valori_inondazione_annuale.items():
-                if amministrativa_dct_inondazione[0].split("_")[1] == adm2_amministrativa:
-                    linee.append(str(amministrativa_dct_amministrativi[1]['iso3']).upper() + "','" + str(amministrativa_dct_amministrativi[1]['adm0_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm0_code'] +
-                                 ",'" + str(amministrativa_dct_amministrativi[1]['adm1_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm1_code'] +
-                                 "," + amministrativa_dct_amministrativi[1]['adm2_code'] + ",'" + adm2_amministrativa +
-                                 "'," + str(amministrativa_dct_inondazione[1][25]) + "," + str(amministrativa_dct_inondazione[1][50]) +
-                                 "," + str(amministrativa_dct_inondazione[1][100]) + "," + str(amministrativa_dct_inondazione[1][200]) +
-                                 "," + str(amministrativa_dct_inondazione[1][500]) + "," + str(amministrativa_dct_inondazione[1][1000]))
-        lista_comandi = []
-        for linea in linee:
-             inserimento = "INSERT INTO " + "public.sparc_annual_pop" + \
-                           " (iso3,adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name,rp25,rp50,rp100,rp200,rp500,rp1000)" \
-                           "VALUES('" + linea + ");"
-             lista_comandi.append(inserimento)
-
-        return lista_comandi
-
-    def inserisci_valori_dbfs(self,ritornati_passati):
+    def insert_values_gathered_from_dbfs(self,ritornati_passati):
 
         for ritornato in ritornati_passati:
             self.cur.execute(ritornato)
@@ -548,7 +526,7 @@ class ManagePostgresDBDrought(ProjectDrought):
             paesi.append(paese[0])
         return sorted(paesi)
 
-    def salva_cambi(self):
+    def save_changes(self):
         try:
             self.conn.commit()
             print "Changes saved"

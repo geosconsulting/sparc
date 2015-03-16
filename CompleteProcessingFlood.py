@@ -645,6 +645,7 @@ class ManagePostgresDB(Progetto):
     def inserisci_valori_calcolati(self):
 
         for linea in lista_finale:
+            print linea[0], linea[1], linea[2], linea[3], linea[4], linea[5], linea[6]
             inserimento = "INSERT INTO " + self.schema + ".sparc_population_month" + \
                           " (iso3, adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name," \
                           "rp,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,\"dec\", n_cases)" \
@@ -747,7 +748,7 @@ class ManagePostgresDB(Progetto):
 
         return contatore_si,lista_si_dbf, dct_valori_inondazione_annuale
 
-    def process_dct_annuali(self,adms, dct_valori_inondazione_annuale):
+    def process_dct_annuali(self, adms, dct_valori_inondazione_annuale):
 
         lista = []
         for adm in adms:
@@ -770,7 +771,6 @@ class ManagePostgresDB(Progetto):
             dct_valori_amministrativi[radice_dct]["adm2_name"] = str(lista[indice][0][5].strip())
             dct_valori_amministrativi[radice_dct]["adm2_code"] = str(lista[indice][0][6].strip())
         #print dct_valori_amministrativi
-
 
         lista_rp = [25, 50, 100, 200, 500, 1000]
         for valore in dct_valori_inondazione_annuale.items():

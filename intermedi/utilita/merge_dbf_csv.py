@@ -77,7 +77,6 @@ def becca_il_dbf(paese_ricerca, adms):
         adm2_amministrativa = amministrativa_dct_amministrativi[0]
         for amministrativa_dct_inondazione in dct_valori_inondazione_annuale.items():
             if amministrativa_dct_inondazione[0] == adm2_amministrativa:
-                #print adm2_amministrativa,amministrativa_dct_inondazione[1]
                 linee.append(str(amministrativa_dct_amministrativi[1]['iso3']).upper() + "','" + str(amministrativa_dct_amministrativi[1]['adm0_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm0_code'] +
                              ",'" + str(amministrativa_dct_amministrativi[1]['adm1_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm1_code'] +
                              "," + amministrativa_dct_amministrativi[1]['adm2_code'] + ",'" + adm2_amministrativa +
