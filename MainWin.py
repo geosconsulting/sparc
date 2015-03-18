@@ -45,8 +45,8 @@ class AppSPARC:
 
         paese = self.box_value_adm0.get()
 
-        aree_amministrative = completeDrought.ManagePostgresDBDrought(self.dbname, self.user, self.password)
-        lista_admin2 = aree_amministrative.admin_2nd_level_list(paese)
+        db_conn_drought = completeDrought.ManagePostgresDBDrought(self.dbname, self.user, self.password)
+        lista_admin2 = db_conn_drought.admin_2nd_level_list(paese)
 
         for aministrazione in lista_admin2[1].iteritems():
 
@@ -56,7 +56,7 @@ class AppSPARC:
             #all_codes = aree_amministrative.livelli_amministrativi_0_1(code_admin)
             #self.area_messaggi.insert(INSERT, all_codes)
 
-            aree_amministrative.file_structure_creation(nome_admin, code_admin)
+            db_conn_drought.file_structure_creation(nome_admin, code_admin)
             newDroughtAssessment = completeDrought.HazardAssessmentDrought(self.dbname, self.user, self.password)
             newDroughtAssessment.extract_poly2_admin(paese, nome_admin, code_admin)
 
@@ -68,10 +68,25 @@ class AppSPARC:
                 print "Population raster not available...."
                 sys.exit()
 
-            # if esiste_flood == "Drougtht":
-            #     newDroughtAssessment.calcolo_statistiche_zone_inondazione()
-            # else:
-            #     pass
+        dizio_drought = db_conn_drought.collect_drought_poplation_frequencies_frm_dbfs()
+        self.area_messaggi.insert(INSERT, "Data Collected\n")
+        adms = set()
+        for chiave,valori in sorted(dizio_drought.iteritems()):
+            adms.add(chiave.split("-")[1])
+        insert_list = db_conn_drought.prepare_insert_statements_drought_monthly_values(adms, dizio_drought)[2]
+        self.area_messaggi.insert(INSERT, "Data Ready for Upload in DB\n")
+
+        if db_conn_drought.check_if_monthly_table_drought_exists() == '42P01':
+            db_conn_drought.create_sparc_drought_population_month()
+            db_conn_drought.insert_drought_in_postgresql(insert_list)
+
+        if db_conn_drought.check_if_monthly_table_drought_exists() == 'exists':
+             db_conn_drought.insert_drought_in_postgresql(insert_list)
+
+        db_conn_drought.save_changes()
+        db_conn_drought.close_connection()
+        self.area_messaggi.insert(INSERT, "Data for " + paese + " Uploaded in DB")
+
 
     def national_calc_flood(self):
 

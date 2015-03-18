@@ -279,9 +279,9 @@ class HazardAssessmentDrought(ProjectDrought):
 
 class ManagePostgresDBDrought(ProjectDrought):
 
-    #########  MONTLHY CALCULATIONS   #########
-    #########  MONTLHY CALCULATIONS   #########
-    #########  MONTLHY CALCULATIONS   #########
+    #########  MONTHLY CALCULATIONS   #########
+    #########  MONTHLY CALCULATIONS   #########
+    #########  MONTHLY CALCULATIONS   #########
 
     def check_if_monthly_table_drought_exists(self):
 
@@ -301,16 +301,6 @@ class ManagePostgresDBDrought(ProjectDrought):
 
         cur_check.close()
         conn_check.close()
-
-    def fetch_results_drought_montly_from_txt_file(self):
-
-        global lista_finale
-        lista_finale=[]
-
-        with open(self.proj_dir + self.paese + "/" + self.paese + ".txt", 'rb') as csvfile_pop_month:
-            pop_monthly_reader = csv.reader(csvfile_pop_month, delimiter=',', quotechar='"')
-            for row in pop_monthly_reader:
-                lista_finale.append(row)
 
     def get_all_administrative_values_using_adm2_code(self):
 
@@ -344,164 +334,148 @@ class ManagePostgresDBDrought(ProjectDrought):
            adm1_code character(8),
            adm2_code character(8),
            adm2_name character(120),
-           rp integer,
-           jan integer,
-           feb integer,
-           mar integer,
-           apr integer,
-           may integer,
-           jun integer,
-           jul integer,
-           aug integer,
-           sep integer,
-           oct integer,
-           nov integer,
-           dec integer,
-           n_cases double precision,"""
-        constraint = "CONSTRAINT population_month_pkey PRIMARY KEY (id));"
+           month character(3),
+           freq integer,
+           pop integer,"""
+        constraint = "CONSTRAINT pop_month_drought_pkey PRIMARY KEY (id));"
 
         try:
             comando = SQL % (self.schema, 'sparc_population_month_drought', campi, constraint)
             self.cur.execute(comando)
-            print "Monthly Population Split Table Created"
+            print "Monthly Population Drought Table Created"
         except psycopg2.Error as createErrore:
             descrizione_errore = createErrore.pgerror
             codice_errore = createErrore.pgcode
             print descrizione_errore, codice_errore
 
-    def insert_monthly_calulated_drought_values(self):
+    def collect_drought_poplation_frequencies_frm_dbfs(self):
 
-        for linea in lista_finale:
-            inserimento = "INSERT INTO " + self.schema + ".sparc_population_month_drought" + \
-                          " (iso3, adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name," \
-                          "rp,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,\"dec\", n_cases)" \
-                          "VALUES('" + str(linea[0]) + "','" + linea[1] + "'," + linea[2] + ",'" + linea[3] + "'," \
-                                     + linea[4] + "," + linea[5] + ",'" + linea[6] + "'," + linea[7] + "," \
-                                     + linea[8] + "," + linea[9] + "," + linea[10] + "," + linea[11] + "," \
-                                     + linea[12] + "," + linea[13] + "," + linea[14] + "," + linea[15] + "," \
-                                     + linea[16] + "," + linea[17] + "," + linea[18] + "," + linea[19] + "," \
-                                     + linea[20] + ");"
+        direttorio = self.dirOutPaese
 
-            self.cur.execute(inserimento)
-
-    #########  ANNUAL CALCULATIONS   #########
-    #########  ANNUAL CALCULATIONS   #########
-    #########  ANNUAL CALCULATIONS   #########
-
-    def check_if_yearly_drought_table_exists(self):
-
-        esiste_tabella = "SELECT '"+ self.schema + ".sparc_annual_pop_drought'::regclass"
-        connection_string = "dbname=%s user=%s password=%s" % (self.dbname, self.user,self.password)
-        conn_check = psycopg2.connect(connection_string)
-        cur_check = conn_check.cursor()
-
-        try:
-            cur_check.execute(esiste_tabella)
-            return "exists"
-        except psycopg2.ProgrammingError as laTabellaNonEsiste:
-            #descrizione_errore = laTabellaNonEsiste.pgerror
-            codice_errore = laTabellaNonEsiste.pgcode
-            #return descrizione_errore, codice_errore
-            return codice_errore
-
-        cur_check.close()
-        conn_check.close()
-
-    def create_sparc_drought_population_annual(self):
-
-        SQL = "CREATE TABLE %s.%s %s %s;"
-        campi = """(
-              id serial NOT NULL,
-              iso3 character(3),
-              adm0_name character(120),
-              adm0_code character(12),
-              adm1_code character(12),
-              adm1_name character(120),
-              adm2_code character(12),
-              adm2_name character(120),
-              rp25 integer,
-              rp50 integer,
-              rp100 integer,
-              rp200 integer,
-              rp500 integer,
-              rp1000 integer,"""
-        constraint = "CONSTRAINT pk_annual_pop PRIMARY KEY (id));"
-
-        try:
-            comando = SQL % (self.schema, 'sparc_annual_pop_drought', campi, constraint)
-            self.cur.execute(comando)
-            print "Annual Population Table Created"
-        except psycopg2.Error as createErrore:
-            descrizione_errore = createErrore.pgerror
-            codice_errore = createErrore.pgcode
-            print descrizione_errore, codice_errore
-
-    def collect_annual_data_byRP_from_dbf_country(self):
-
-        contatore_si = 0
-        lista_si_dbf = []
-
-        direttorio = self.proj_dir + self.paese
-        dct_valori_inondazione_annuale = {}
+        dct_valori_drought = {}
         for direttorio_principale, direttorio_secondario, file_vuoto in os.walk(direttorio):
             if direttorio_principale != direttorio:
-                paese = direttorio_principale.split("/")[5].split("\\")[0]
-                admin = direttorio_principale.split(paese)[1][1:]
-                files_dbf = glob.glob(direttorio_principale + "/*.dbf")
+                linea_taglio = 0
+                contatore = 0
+                for lettera in direttorio_principale:
+                    contatore += 1
+                    if lettera == '_':
+                        linea_taglio = contatore
+                admin_name = direttorio_principale[0:linea_taglio-1].split("\\")[1]
+                admin_code = direttorio_principale[linea_taglio:]
+                files_dbf = glob.glob(direttorio_principale + "/*stat*.dbf")
                 for file in files_dbf:
-                    fileName, fileExtension = os.path.splitext(file)
-                    if 'stat' in fileName:
-                        contatore_si += 1
-                        lista_si_dbf.append(direttorio_principale)
-                        try:
-                            filecompleto = fileName + ".dbf"
-                            tabella = dbf.Table(filecompleto)
-                            tabella.open()
-                            dct_valori_inondazione_annuale[admin] = {}
-                            for recordio in tabella:
-                                if recordio.value > 0:
-                                    dct_valori_inondazione_annuale[admin][recordio.value] = recordio.sum
-                        except:
-                            pass
+                    solo_file = file.split("\\")[-1]
+                    month = os.path.splitext(solo_file)[0].split("_")[1]
+                    unique_id = admin_name + "-" + admin_code + "-" + month
+                    try:
+                        tabella = dbf.Table(file)
+                        tabella.open()
+                        dct_valori_drought[unique_id] = {}
+                        for recordio in tabella:
+                            if recordio.value > 0:
+                                dct_valori_drought[unique_id][recordio['value']] = recordio['sum']
+                    except:
+                        pass
+        return dct_valori_drought
 
-        lista_stat_dbf = [25, 50, 100, 200, 500, 1000]
-        for valore in dct_valori_inondazione_annuale.items():
-            quanti_rp = len(valore[1].keys())
-            if quanti_rp < 6:
-                for rp in lista_stat_dbf:
-                    if rp not in valore[1].keys():
-                        dct_valori_inondazione_annuale[valore[0]][rp] = 0
+    def prepare_insert_statements_drought_monthly_values(self,adms, dct_values_annual_drought):
 
-        return contatore_si, lista_si_dbf, dct_valori_inondazione_annuale
+        def associate_raster_to_month(val):
 
-    def process_dictio_annual(self,adms, dct_valori_inondazione_annuale):
+            mese = ''
+            if val == 1:
+                mese = 'jan'
+            elif val == 2:
+                mese = 'feb'
+            elif val == 3:
+                mese = 'mar'
+            elif val == 4:
+                mese = 'apr'
+            elif val == 5:
+                mese = 'may'
+            elif val == 6:
+                mese = 'jun'
+            elif val == 7:
+                mese = 'jul'
+            elif val == 8:
+                mese = 'aug'
+            elif val == 9:
+                mese = 'sep'
+            elif val == 10:
+                mese = 'oct'
+            elif val == 11:
+                mese = 'nov'
+            elif val == 12:
+                mese = 'dec'
+
+            return mese
+
+        schema = 'public'
+        dbname = 'geonode-imports'
+        user = 'geonode'
+        password = 'geonode'
+
+        try:
+            connection_string = "dbname=%s user=%s password=%s" % (dbname, user, password)
+            conn = psycopg2.connect(connection_string)
+        except Exception as e:
+            print e.message
+        cur = conn.cursor()
 
         lista = []
         for adm in adms:
-            #print adm
-            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_name, adm2_code FROM sparc_gaul_wfp_iso WHERE adm2_code = '" + adm + "' AND adm0_name = '" + paese + "';"
-            #print sql
-            self.cur.execute(sql)
-            risultati = self.cur.fetchall()
+            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_name, adm2_code FROM " \
+                  "sparc_gaul_wfp_iso WHERE adm2_code = '" + str(adm) + "' AND adm0_name = '" + self.paese + "';"
+            cur.execute(sql)
+            risultati = cur.fetchall()
             lista.append(risultati)
 
-        dct_valori_amministrativi = {}
+        dct_all_admin_values = {}
         for indice in range(0, len(lista)):
             radice_dct = lista[indice][0][6]
-            dct_valori_amministrativi[radice_dct] = {}
-            dct_valori_amministrativi[radice_dct]["iso3"] = str(lista[indice][0][0].strip())
-            dct_valori_amministrativi[radice_dct]["adm0_name"] = str(lista[indice][0][1].strip())
-            dct_valori_amministrativi[radice_dct]["adm0_code"] = str(lista[indice][0][2])
-            dct_valori_amministrativi[radice_dct]["adm1_code"] = str(lista[indice][0][3])
-            dct_valori_amministrativi[radice_dct]["adm1_name"] = str(lista[indice][0][4].strip())
-            dct_valori_amministrativi[radice_dct]["adm2_name"] = str(lista[indice][0][5].strip())
-            dct_valori_amministrativi[radice_dct]["adm2_code"] = str(lista[indice][0][6])
+            dct_all_admin_values[radice_dct] = {}
+            dct_all_admin_values[radice_dct]["iso3"] = str(lista[indice][0][0].strip())
+            dct_all_admin_values[radice_dct]["adm0_name"] = str(lista[indice][0][1].strip())
+            dct_all_admin_values[radice_dct]["adm0_code"] = str(lista[indice][0][2])
+            dct_all_admin_values[radice_dct]["adm1_code"] = str(lista[indice][0][3])
+            dct_all_admin_values[radice_dct]["adm1_name"] = str(lista[indice][0][4].strip())
+            dct_all_admin_values[radice_dct]["adm2_name"] = str(lista[indice][0][5].strip())
+            dct_all_admin_values[radice_dct]["adm2_code"] = str(lista[indice][0][6])
 
-        #return what????
+        linee =[]
+        for single_adm_chiavi,single_adm_value in sorted(dct_all_admin_values.iteritems()):
+            for adm2_drought_keys, adm2_drought_values in sorted(dct_values_annual_drought.iteritems()):
+                val_adm = int(adm2_drought_keys.split("-")[1])
+                if single_adm_chiavi == val_adm:
+                    month_numeric = int(adm2_drought_keys.split('drmo')[1])
+                    month_textual = associate_raster_to_month(month_numeric)
+                    linea_adm = str("'" + single_adm_value['iso3']).upper() + "','" + str(single_adm_value['adm0_name']).capitalize() + "'," + single_adm_value['adm0_code'] + \
+                               ",'" + str(single_adm_value['adm1_name']).capitalize() + "'," + single_adm_value['adm1_code'] + \
+                               "," + single_adm_value['adm2_code'] + ",'" + single_adm_value['adm2_name'] + "'"
+                    for linee_con_corrispondenza_amministrativa in dct_values_annual_drought.iteritems():
+                        if linee_con_corrispondenza_amministrativa[0] == adm2_drought_keys:
+                            if len(linee_con_corrispondenza_amministrativa[1].keys())> 0:
+                                for dove_ci_sono_persone in linee_con_corrispondenza_amministrativa[1].iteritems():
+                                    linea_calc = "'" + month_textual + "'," + str(dove_ci_sono_persone[0]) + "," + str(dove_ci_sono_persone[1])
+                                    linee.append(linea_adm + "," + linea_calc)
 
-    def insert_values_gathered_from_dbfs(self,ritornati_passati):
+        inserimento_mensili = []
+        for linea in linee:
+            #print linea,len(linea)
+            inserimento = "INSERT INTO public.sparc_population_month_drought" + \
+                           " (iso3,adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name," \
+                           "month, freq, pop)" \
+                           "VALUES(" + linea + ");"
+            #print inserimento
+            inserimento_mensili.append(inserimento)
 
-        for ritornato in ritornati_passati:
+        return lista, dct_all_admin_values ,inserimento_mensili
+
+    def insert_drought_in_postgresql(self, lista_inserimento):
+
+        for ritornato in lista_inserimento:
+            #print ritornato
             self.cur.execute(ritornato)
 
     #########  COMMON TASKS   #########

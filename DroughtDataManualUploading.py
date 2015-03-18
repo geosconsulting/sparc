@@ -5,7 +5,7 @@ import glob
 import psycopg2
 import dbf
 
-def inserisci_postgresql(lista_inserimento):
+def insert_drought_in_postgresql(lista_inserimento):
 
     schema = 'public'
     dbname = 'geonode-imports'
@@ -21,7 +21,6 @@ def inserisci_postgresql(lista_inserimento):
     cur = conn.cursor()
 
     for inserimento_singolo in lista_inserimento:
-        #print inserimento_singolo
         cur.execute(inserimento_singolo)
 
     try:
@@ -61,8 +60,6 @@ def collect_drought_poplation_frequencies_frm_dbfs(direttorio):
                     tabella.open()
                     dct_valori_drought[unique_id] = {}
                     for recordio in tabella:
-                        #TODO: E' qui che devo verificare se raccolgo tutti i valori per ognuno dei 12 raster di drought
-                        #TODO: sembra che i valori vengano raccolti ma devo verificare se effettivamente li raccolgo tutti
                         if recordio.value > 0:
                             dct_valori_drought[unique_id][recordio['value']] = recordio['sum']
                 except:
@@ -70,6 +67,36 @@ def collect_drought_poplation_frequencies_frm_dbfs(direttorio):
     return dct_valori_drought
 
 def prepare_insert_statements_drought_monthly_values(paese, adms, dct_values_annual_drought):
+
+        def associate_raster_to_month(val):
+
+            mese = ''
+            if val == 1:
+                mese = 'jan'
+            elif val == 2:
+                mese = 'feb'
+            elif val == 3:
+                mese = 'mar'
+            elif val == 4:
+                mese = 'apr'
+            elif val == 5:
+                mese = 'may'
+            elif val == 6:
+                mese = 'jun'
+            elif val == 7:
+                mese = 'jul'
+            elif val == 8:
+                mese = 'aug'
+            elif val == 9:
+                mese = 'sep'
+            elif val == 10:
+                mese = 'oct'
+            elif val == 11:
+                mese = 'nov'
+            elif val == 12:
+                mese = 'dec'
+
+            return mese
 
         schema = 'public'
         dbname = 'geonode-imports'
@@ -85,7 +112,8 @@ def prepare_insert_statements_drought_monthly_values(paese, adms, dct_values_ann
 
         lista = []
         for adm in adms:
-            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_name, adm2_code FROM sparc_gaul_wfp_iso WHERE adm2_code = '" + adm + "' AND adm0_name = '" + paese + "';"
+            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_name, adm2_code FROM " \
+                  "sparc_gaul_wfp_iso WHERE adm2_code = '" + adm + "' AND adm0_name = '" + paese + "';"
             cur.execute(sql)
             risultati = cur.fetchall()
             lista.append(risultati)
@@ -102,43 +130,38 @@ def prepare_insert_statements_drought_monthly_values(paese, adms, dct_values_ann
             dct_all_admin_values[radice_dct]["adm2_name"] = str(lista[indice][0][5].strip())
             dct_all_admin_values[radice_dct]["adm2_code"] = str(lista[indice][0][6])
 
+
+
         linee =[]
-        for single_adm_value in dct_all_admin_values.items():
-             adm2_code = single_adm_value[0]
-             for adm2_drought_keys,adm2_drought_values in sorted(dct_values_annual_drought.iteritems()):
-                 print adm2_drought_keys.split("-")[1],adm2_code
-                 if adm2_drought_keys.split("-")[1] == adm2_code:
-                    linee.append(str(single_adm_value[1]['iso3']).upper() + "','" + str(single_adm_value[1]['adm0_name']).capitalize() + "'," + single_adm_value[1]['adm0_code'] +
-                             ",'" + str(single_adm_value[1]['adm1_name']).capitalize() + "'," + single_adm_value[1]['adm1_code'] +
-                             "," + single_adm_value[1]['adm2_code'] + ",'" + str(adm2_drought_values))
+        for single_adm_chiavi,single_adm_value in sorted(dct_all_admin_values.iteritems()):
+            for adm2_drought_keys, adm2_drought_values in sorted(dct_values_annual_drought.iteritems()):
+                val_adm = int(adm2_drought_keys.split("-")[1])
+                if single_adm_chiavi == val_adm:
+                    month_numeric = int(adm2_drought_keys.split('drmo')[1])
+                    month_textual = associate_raster_to_month(month_numeric)
+                    linea_adm = str("'" + single_adm_value['iso3']).upper() + "','" + str(single_adm_value['adm0_name']).capitalize() + "'," + single_adm_value['adm0_code'] + \
+                               ",'" + str(single_adm_value['adm1_name']).capitalize() + "'," + single_adm_value['adm1_code'] + \
+                               "," + single_adm_value['adm2_code'] + ",'" + single_adm_value['adm2_name'] + "'"
+                    for linee_con_corrispondenza_amministrativa in dct_values_annual_drought.iteritems():
+                        if linee_con_corrispondenza_amministrativa[0] == adm2_drought_keys:
+                            if len(linee_con_corrispondenza_amministrativa[1].keys())> 0:
+                                for dove_ci_sono_persone in linee_con_corrispondenza_amministrativa[1].iteritems():
+                                    linea_calc = "'" + month_textual + "'," + str(dove_ci_sono_persone[0]) + "," + str(dove_ci_sono_persone[1])
+                                    linee.append(linea_adm + "," + linea_calc)
 
-        #inserimento_mensili = []
-        #for linea in lista:
-            #print linea
-            # if len(linea) == 21:
-            #     inserimento = "INSERT INTO public.sparc_population_month_drought" + \
-            #               " (iso3, adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name," \
-            #               "rp,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,\"dec\", n_cases)" \
-            #               "VALUES('" + str(linea[0]) + "','" + linea[1] + "'," + linea[2] + ",'" + linea[3] + "'," \
-            #               + linea[4] + "," + linea[5] + ",'" + linea[6] + "'," + linea[7] + "," \
-            #               + linea[8] + "," + linea[9] + "," + linea[10] + "," + linea[11] + "," \
-            #               + linea[12] + "," + linea[13] + "," + linea[14] + "," + linea[15] + "," \
-            #               + linea[16] + "," + linea[17] + "," + linea[18] + "," + linea[19] + "," \
-            #               + linea[20] + ");"
-            #     inserimento_mensili.append(inserimento)
-            # else:
-            #     linea_vuota = "0,0,0,0,0,0,0,0,0,0,0,0"
-            #     inserimento = "INSERT INTO public.sparc_population_month_drought" + \
-            #               " (iso3, adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name," \
-            #               "rp,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,\"dec\", n_cases)" \
-            #               "VALUES('" + str(linea[0]) + "','" + linea[1] + "'," + linea[2] + ",'" + linea[3] + "'," \
-            #               + linea[4] + "," + linea[5] + ",'" + linea[6] + "'," + linea[7] + "," \
-            #               + linea[8] + linea_vuota + "," + linea[9] + ");"
-            #     inserimento_mensili.append(inserimento)
+        inserimento_mensili = []
+        for linea in linee:
+            #print linea,len(linea)
+            inserimento = "INSERT INTO public.sparc_population_month_drought" + \
+                           " (iso3,adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name," \
+                           "month, freq, pop)" \
+                           "VALUES(" + linea + ");"
+            #print inserimento
+            inserimento_mensili.append(inserimento)
 
-        return lista, dct_all_admin_values#, inserimento_mensili
+        return lista, dct_all_admin_values ,inserimento_mensili
 
-paese = 'Benin'
+paese = 'Cameroon'
 proj_dir = "c:/data/tools/sparc/projects/drought/"
 dirOutPaese = proj_dir + paese
 
@@ -147,8 +170,4 @@ adms=set()
 for chiave,valori in sorted(raccogli_da_files_anno.iteritems()):
     adms.add(chiave.split("-")[1])
 raccolti_anno = prepare_insert_statements_drought_monthly_values(paese, adms, raccogli_da_files_anno)
-
-#print raccolti_anno
-#inserisci_postgresql(raccolti_anno[2])
-
-#inserisci_postgresql(raccolti_mese)
+insert_drought_in_postgresql(raccolti_anno[2])
