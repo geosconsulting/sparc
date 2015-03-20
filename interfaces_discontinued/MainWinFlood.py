@@ -130,8 +130,8 @@ class AppSPARC:
         paese = self.box_value_adm0.get()
 
         import CountryCalculationsFlood
-        CountryCalculationsFlood.processo_dati(paese)
-        CountryCalculationsFlood.scrittura_dati(paese)
+        CountryCalculationsFlood.data_processing_module_flood(paese)
+        CountryCalculationsFlood.data_uploadin_module_flood(paese)
 
 root = Tk()
 root.title("SPARC Flood Assessment")

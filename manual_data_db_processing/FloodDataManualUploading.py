@@ -70,7 +70,7 @@ def raccogli_mensili(fillolo):
 
     return inserimento_mensili
 
-def raccogli_annuali(direttorio):
+def collect_annual_data_byRP_from_dbf_country(direttorio):
 
     contatore_si = 0
     lista_si_dbf = []
@@ -114,7 +114,7 @@ def raccogli_annuali(direttorio):
 
     return dct_valori_inondazione_annuale
 
-def process_dct_annuali(paese, adms, dct_valori_inondazione_annuale, file_completo):
+def process_dict_with_annual_values(paese, adms, dct_valori_inondazione_annuale, file_completo):
 
         schema = 'public'
         dbname = 'geonode-imports'
@@ -207,11 +207,11 @@ proj_dir = "c:/data/tools/sparc/projects/floods/"
 dirOutPaese = proj_dir + paese
 fillolo = dirOutPaese + "/" + paese + ".txt"
 
-raccogli_da_files_anno = raccogli_annuali(dirOutPaese)
+raccogli_da_files_anno = collect_annual_data_byRP_from_dbf_country(dirOutPaese)
 adms = []
 for raccolto in raccogli_da_files_anno:
     adms.append(raccolto)
-raccolti_anno = process_dct_annuali(paese, adms, raccogli_da_files_anno, fillolo)
+raccolti_anno = process_dict_with_annual_values(paese, adms, raccogli_da_files_anno, fillolo)
 inserisci_postgresql(raccolti_anno[2])
 
 raccolti_mese = raccogli_mensili(fillolo)

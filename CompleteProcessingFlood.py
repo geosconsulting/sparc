@@ -585,7 +585,7 @@ class ManagePostgresDB(Progetto):
             for row in pop_monthly_reader:
                 lista_finale.append(row)
 
-    def leggi_valori_amministrativi(self):
+    def read_all_administrative_values_for_poligons_level2(self):
 
         cursor = self.conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
         comando = "SELECT c.name,c.iso2,c.iso3,a.area_name FROM SPARC_wfp_countries c INNER JOIN SPARC_wfp_areas a ON c.wfp_area = a.area_id WHERE c.name = '" + self.paese + "';"
@@ -642,21 +642,32 @@ class ManagePostgresDB(Progetto):
             codice_errore = createErrore.pgcode
             print descrizione_errore, codice_errore
 
-    def inserisci_valori_calcolati(self):
+    def collect_people_at_risk_montlhy_from_txt(self):
 
+        inserimento_mensili = []
         for linea in lista_finale:
-            print linea[0], linea[1], linea[2], linea[3], linea[4], linea[5], linea[6]
-            inserimento = "INSERT INTO " + self.schema + ".sparc_population_month" + \
-                          " (iso3, adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name," \
-                          "rp,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,\"dec\", n_cases)" \
-                          "VALUES('" + str(linea[0]) + "','" + linea[1] + "'," + linea[2] + ",'" + linea[3] + "'," \
-                                     + linea[4] + "," + linea[5] + ",'" + linea[6] + "'," + linea[7] + "," \
-                                     + linea[8] + "," + linea[9] + "," + linea[10] + "," + linea[11] + "," \
-                                     + linea[12] + "," + linea[13] + "," + linea[14] + "," + linea[15] + "," \
-                                     + linea[16] + "," + linea[17] + "," + linea[18] + "," + linea[19] + "," \
-                                     + linea[20] + ");"
+            if len(linea) == 21:
+                inserimento = "INSERT INTO public.sparc_population_month" + \
+                              " (iso3, adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name," \
+                              "rp,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,\"dec\", n_cases)" \
+                              "VALUES('" + str(linea[0]) + "','" + linea[1] + "'," + linea[2] + ",'" + linea[3] + "'," \
+                              + linea[4] + "," + linea[5] + ",'" + linea[6] + "'," + linea[7] + "," \
+                              + linea[8] + "," + linea[9] + "," + linea[10] + "," + linea[11] + "," \
+                              + linea[12] + "," + linea[13] + "," + linea[14] + "," + linea[15] + "," \
+                              + linea[16] + "," + linea[17] + "," + linea[18] + "," + linea[19] + "," \
+                              + linea[20] + ");"
+                inserimento_mensili.append(inserimento)
+            else:
+                linea_vuota = "0,0,0,0,0,0,0,0,0,0,0,0"
+                inserimento = "INSERT INTO public.sparc_population_month" + \
+                              " (iso3, adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name," \
+                              "rp,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,\"dec\", n_cases)" \
+                              "VALUES('" + str(linea[0]) + "','" + linea[1] + "'," + linea[2] + ",'" + linea[3] + "'," \
+                              + linea[4] + "," + linea[5] + ",'" + linea[6] + "'," + linea[7] + "," \
+                              + linea[8] + linea_vuota + "," + linea[9] + ");"
+                inserimento_mensili.append(inserimento)
 
-            self.cur.execute(inserimento)
+        return inserimento_mensili
 
     #########  ANNUAL CALCULATIONS   #########
     #########  ANNUAL CALCULATIONS   #########
@@ -719,8 +730,14 @@ class ManagePostgresDB(Progetto):
         dct_valori_inondazione_annuale = {}
         for direttorio_principale, direttorio_secondario, file_vuoto in os.walk(direttorio):
             if direttorio_principale != direttorio:
-                paese = direttorio_principale.split("/")[5].split("\\")[0]
-                admin = direttorio_principale.split(paese)[1][1:]
+                linea_taglio = 0
+                contatore = 0
+                for lettera in direttorio_principale:
+                    contatore += 1
+                    if lettera == '_':
+                        linea_taglio = contatore
+                admin_name = direttorio_principale[0:linea_taglio-1].split("\\")[1]
+                admin_code = direttorio_principale[linea_taglio:]
                 files_dbf = glob.glob(direttorio_principale + "/*.dbf")
                 for file in files_dbf:
                     fileName, fileExtension = os.path.splitext(file)
@@ -728,32 +745,33 @@ class ManagePostgresDB(Progetto):
                         contatore_si += 1
                         lista_si_dbf.append(direttorio_principale)
                         try:
-                            filecompleto = fileName + ".dbf"
-                            tabella = dbf.Table(filecompleto)
+                            tabella = dbf.Table(file)
                             tabella.open()
-                            dct_valori_inondazione_annuale[admin] = {}
+                            dct_valori_inondazione_annuale[admin_code] = {}
+                            dct_valori_inondazione_annuale[admin_code]['adm_name'] = admin_name
                             for recordio in tabella:
+                                dct_valori_inondazione_annuale[admin_code]['adm_name'] = admin_name
                                 if recordio.value > 0:
-                                    dct_valori_inondazione_annuale[admin][recordio.value] = recordio.sum
+                                    dct_valori_inondazione_annuale[admin_code][recordio.value] = recordio.sum
                         except:
                             pass
 
-        lista_stat_dbf = [25, 50, 100, 200, 500, 1000]
-        for valore in dct_valori_inondazione_annuale.items():
-            quanti_rp = len(valore[1].keys())
-            if quanti_rp < 6:
-                for rp in lista_stat_dbf:
-                    if rp not in valore[1].keys():
-                        dct_valori_inondazione_annuale[valore[0]][rp] = 0
+                lista_stat_dbf = [25, 50, 100, 200, 500, 1000]
+                for valore in dct_valori_inondazione_annuale.items():
+                    quanti_rp = len(valore[1].keys())
+                    if quanti_rp < 6:
+                        for rp in lista_stat_dbf:
+                            if rp not in valore[1].keys():
+                                dct_valori_inondazione_annuale[valore[0]][rp] = 0
 
-        return contatore_si,lista_si_dbf, dct_valori_inondazione_annuale
+        return dct_valori_inondazione_annuale
 
-    def process_dct_annuali(self, adms, dct_valori_inondazione_annuale):
+    def process_dict_with_annual_values(self, adms, dct_valori_inondazione_annuale):
 
         lista = []
         for adm in adms:
             #print adm
-            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_name, adm2_code FROM sparc_population_month WHERE adm2_code = '" + adm + "' AND adm0_name = '" + self.paese + "';"
+            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_name, adm2_code FROM sparc_gaul_wfp_iso WHERE adm2_code = '" + adm + "' AND adm0_name = '" + self.paese + "';"
             #print sql
             self.cur.execute(sql)
             risultati = self.cur.fetchall()
@@ -761,16 +779,15 @@ class ManagePostgresDB(Progetto):
 
         dct_valori_amministrativi = {}
         for indice in range(0, len(lista)):
-            radice_dct = lista[indice][0][6].strip()
+            radice_dct = lista[indice][0][6]
             dct_valori_amministrativi[radice_dct] = {}
             dct_valori_amministrativi[radice_dct]["iso3"] = str(lista[indice][0][0].strip())
             dct_valori_amministrativi[radice_dct]["adm0_name"] = str(lista[indice][0][1].strip())
-            dct_valori_amministrativi[radice_dct]["adm0_code"] = str(lista[indice][0][2].strip())
-            dct_valori_amministrativi[radice_dct]["adm1_code"] = str(lista[indice][0][3].strip())
+            dct_valori_amministrativi[radice_dct]["adm0_code"] = str(lista[indice][0][2])
+            dct_valori_amministrativi[radice_dct]["adm1_code"] = str(lista[indice][0][3])
             dct_valori_amministrativi[radice_dct]["adm1_name"] = str(lista[indice][0][4].strip())
             dct_valori_amministrativi[radice_dct]["adm2_name"] = str(lista[indice][0][5].strip())
-            dct_valori_amministrativi[radice_dct]["adm2_code"] = str(lista[indice][0][6].strip())
-        #print dct_valori_amministrativi
+            dct_valori_amministrativi[radice_dct]["adm2_code"] = str(lista[indice][0][6])
 
         lista_rp = [25, 50, 100, 200, 500, 1000]
         for valore in dct_valori_inondazione_annuale.items():
@@ -784,39 +801,67 @@ class ManagePostgresDB(Progetto):
         for amministrativa_dct_amministrativi in dct_valori_amministrativi.items():
             adm2_amministrativa = amministrativa_dct_amministrativi[0]
             for amministrativa_dct_inondazione in dct_valori_inondazione_annuale.items():
-                if amministrativa_dct_inondazione[0].split("_")[1] == adm2_amministrativa:
+                if int(amministrativa_dct_inondazione[0]) == adm2_amministrativa:
+                    try:
+                        val25 = amministrativa_dct_inondazione[1][25]
+                    except:
+                        val25 = 0.0
+                    try:
+                        val50 = amministrativa_dct_inondazione[1][50]
+                    except:
+                        val50 = 0.0
+                    try:
+                        val100 = amministrativa_dct_inondazione[1][100]
+                    except:
+                        val100 = 0.0
+                    try:
+                        val200 = amministrativa_dct_inondazione[1][200]
+                    except:
+                        val200 = 0.0
+                    try:
+                        val500 = amministrativa_dct_inondazione[1][500]
+                    except:
+                        val500 = 0.0
+                    try:
+                        val1000 = amministrativa_dct_inondazione[1][1000]
+                    except:
+                        val1000 = 0
+
                     linee.append(str(amministrativa_dct_amministrativi[1]['iso3']).upper() + "','" + str(amministrativa_dct_amministrativi[1]['adm0_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm0_code'] +
-                                 ",'" + str(amministrativa_dct_amministrativi[1]['adm1_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm1_code'] +
-                                 "," + amministrativa_dct_amministrativi[1]['adm2_code'] + ",'" + adm2_amministrativa +
-                                 "'," + str(amministrativa_dct_inondazione[1][25]) + "," + str(amministrativa_dct_inondazione[1][50]) +
-                                 "," + str(amministrativa_dct_inondazione[1][100]) + "," + str(amministrativa_dct_inondazione[1][200]) +
-                                 "," + str(amministrativa_dct_inondazione[1][500]) + "," + str(amministrativa_dct_inondazione[1][1000]))
+                            ",'" + str(amministrativa_dct_amministrativi[1]['adm1_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm1_code'] +
+                            "," + amministrativa_dct_amministrativi[1]['adm2_code'] + ",'" + str(adm2_amministrativa) +
+                            "'," + str(val25) + "," + str(val50) + "," + str(val100) + "," + str(val200) + "," + str(val500) + "," + str(val1000))
+
         lista_comandi = []
         for linea in linee:
-             inserimento = "INSERT INTO " + "public.sparc_annual_pop" + \
-                           " (iso3,adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name,rp25,rp50,rp100,rp200,rp500,rp1000)" \
-                           "VALUES('" + linea + ");"
-             lista_comandi.append(inserimento)
+            print linea
+            inserimento = "INSERT INTO " + "public.sparc_annual_pop" + \
+                " (iso3,adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name,rp25,rp50,rp100,rp200,rp500,rp1000)" \
+                "VALUES('" + linea + ");"
+            lista_comandi.append(inserimento)
 
-        return lista_comandi
-
-    def inserisci_valori_dbfs(self,ritornati_passati):
-
-        for ritornato in ritornati_passati:
-            self.cur.execute(ritornato)
+        return lista, dct_valori_amministrativi, lista_comandi
 
     #########  COMMON TASKS   #########
     #########  COMMON TASKS   #########
     #########  COMMON TASKS   #########
 
-    def salva_cambi(self):
+    def insert_values_in_postgres(self,lista_inserimento):#ritornati_passati):
+
+        # for ritornato in ritornati_passati:
+        #     self.cur.execute(ritornato)
+        for inserimento_singolo in lista_inserimento:
+            #print inserimento_singolo
+            self.cur.execute(inserimento_singolo)
+
+    def save_values_in_postgres(self):
         try:
             self.conn.commit()
             print "Changes saved"
         except:
             print "Problem in saving data"
 
-    def close_connection(self):
+    def close_connection_with_postgres(self):
         try:
             self.cur.close()
             self.conn.close()

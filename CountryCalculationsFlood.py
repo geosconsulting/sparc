@@ -13,7 +13,7 @@ user = "geonode"
 password = "geonode"
 lista_amministrazioni = None
 
-def processo_dati(paese):
+def data_processing_module_flood(paese):
 
     nome_admin = ''
     code_admin = ''
@@ -64,7 +64,7 @@ def processo_dati(paese):
 
         newMonthlyAssessment.calcolo_finale(file_controllo)
 
-def scrittura_dati(paese):
+def data_uploadin_module_flood(paese):
 
     wfp_countries = 'sparc_wfp_countries'
     wfp_areas = 'sparc_wfp_areas'
@@ -76,24 +76,30 @@ def scrittura_dati(paese):
     if scrittura_tabelle.check_tabella_month() == '42P01':
         scrittura_tabelle.create_sparc_population_month()
         scrittura_tabelle.fetch_results()
-        scrittura_tabelle.inserisci_valori_calcolati()
+        sql_command_list_month = scrittura_tabelle.collect_people_at_risk_montlhy_from_txt()
+        scrittura_tabelle.insert_values_in_postgres(sql_command_list_month)
 
     if scrittura_tabelle.check_tabella_month() == 'exists':
         scrittura_tabelle.fetch_results()
-        scrittura_tabelle.inserisci_valori_calcolati()
+        sql_command_list_month = scrittura_tabelle.collect_people_at_risk_montlhy_from_txt()
+        scrittura_tabelle.insert_values_in_postgres(sql_command_list_month)
 
     if scrittura_tabelle.check_tabella_year() == '42P01':
         scrittura_tabelle.create_sparc_population_annual()
         dct_annuali = scrittura_tabelle.collect_annual_data_byRP_from_dbf_country()
-        adms = dct_annuali[2].keys()
-        adms_names = [x.split("_")[1] for x in adms]
-        scrittura_tabelle.inserisci_valori_dbfs(scrittura_tabelle.process_dct_annuali(adms_names, dct_annuali[2]))
+        adms = []
+        for raccolto in dct_annuali:
+            adms.append(raccolto)
+        sql_command_list_annual = scrittura_tabelle.process_dict_with_annual_values(adms, dct_annuali)
+        scrittura_tabelle.insert_values_in_postgres(sql_command_list_annual[2])
 
     if scrittura_tabelle.check_tabella_year() == 'exists':
         dct_annuali = scrittura_tabelle.collect_annual_data_byRP_from_dbf_country()
-        adms = dct_annuali[2].keys()
-        adms_names = [x.split("_")[1] for x in adms]
-        scrittura_tabelle.inserisci_valori_dbfs(scrittura_tabelle.process_dct_annuali(adms_names, dct_annuali[2]))
+        adms = []
+        for raccolto in dct_annuali:
+            adms.append(raccolto)
+        sql_command_list_annual = scrittura_tabelle.process_dict_with_annual_values(adms, dct_annuali)
+        scrittura_tabelle.insert_values_in_postgres(sql_command_list_annual[2])
 
-    scrittura_tabelle.salva_cambi()
-    scrittura_tabelle.close_connection()
+    scrittura_tabelle.save_values_in_postgres()
+    scrittura_tabelle.close_connection_with_postgres()

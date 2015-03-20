@@ -87,14 +87,13 @@ class AppSPARC:
         db_conn_drought.close_connection()
         self.area_messaggi.insert(INSERT, "Data for " + paese + " Uploaded in DB")
 
-
     def national_calc_flood(self):
 
         paese = self.box_value_adm0.get()
 
         import CountryCalculationsFlood
-        CountryCalculationsFlood.processo_dati(paese)
-        CountryCalculationsFlood.scrittura_dati(paese)
+        CountryCalculationsFlood.data_processing_module_flood(paese)
+        CountryCalculationsFlood.data_uploadin_module_flood(paese)
 
 root = Tk()
 root.title("SPARC Flood and Drought Assessment")
