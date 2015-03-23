@@ -4,14 +4,13 @@ from dbfpy import dbf
 import os
 import glob
 
-
 def prepare_drought_tables(paese):
 
     direttorio_radice = r"C:\data\tools\sparc\projects\drought"
     direttorio = direttorio_radice + "\\" + paese_ricerca
 
     import pycountry
-    iso_paese = pycountry.countries.get(name = paese_ricerca).alpha3
+    iso_paese = pycountry.countries.get(name=paese_ricerca).alpha3
 
     lista = []
     for direttorio_principale, direttorio_secondario, file_vuoto in os.walk(direttorio):

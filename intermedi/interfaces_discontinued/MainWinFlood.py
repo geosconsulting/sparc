@@ -7,7 +7,7 @@ import ttk
 
 from interfaces_discontinued import HazardAssessment as ha
 import MonthlyDistribution as monDist
-import interfaces_discontinued.UtilitieSparc as us
+import intermedi.interfaces_discontinued.UtilitieSparc as us
 
 
 class AppSPARC:

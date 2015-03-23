@@ -36,7 +36,7 @@ class GDELT_Analysis(object):
                         data_store.append(line)
         return data_store
 
-    def GDELT_coords(self,data_store):
+    def GDELT_coords(self, data_store):
 
         for row_corrente in data_store:
             try:

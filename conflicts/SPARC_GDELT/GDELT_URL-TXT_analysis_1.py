@@ -15,7 +15,6 @@ from mpl_toolkits.basemap import Basemap
 from sqlalchemy import create_engine
 from collections import defaultdict
 
-
 gdelt_base_url = 'http://data.gdeltproject.org/events/'
 headers_daily = "CSV.header.dailyupdates.txt"
 headers_historical = "CSV.header.historical.txt"
@@ -297,7 +296,7 @@ def analizziamo_dati():
 
     engine = create_engine(r'postgresql://geonode:geonode@localhost/geonode-imports')
     connection = engine.connect()
-    sql = 'SELECT * FROM conflicts."gd_KG" WHERE "Actor1Name" = \'ACTIVIST\';'
+    sql = 'SELECT "Quad* FROM conflicts."gd_Kyrgyzstan" WHERE "Actor1Name" = \'ACTIVIST\';'
     analisi = psql.read_sql(sql, engine)
     connection.close()
 
@@ -344,8 +343,8 @@ def main():
 if __name__ == "__main__":
     main()
 
-# ritornati = analizziamo_dati()
-# ritornati['data_conv'] = pd.Series([pd.to_datetime(date) for date in ritornati['SQLDATE']], index=ritornati.index)
+ritornati = analizziamo_dati()
+ritornati['data_conv'] = pd.Series([pd.to_datetime(date) for date in ritornati['SQLDATE']], index=ritornati.index)
 # ritornati['mesi'] = ritornati['MonthYear'].str[4:]
 #
 # print ritornati.head()

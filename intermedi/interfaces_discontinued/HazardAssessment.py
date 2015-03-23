@@ -14,12 +14,13 @@ import scipy.optimize
 from scipy.interpolate import interp1d
 import arcpy
 
+
 arcpy.CheckOutExtension("spatial")
 from arcpy import env
 env.overwriteOutput = "true"
 
 #Custom Modules
-from interfaces_discontinued import UtilitieSparc as us
+from intermedi.interfaces_discontinued import UtilitieSparc as us
 
 
 class HazardAssessment(object):
