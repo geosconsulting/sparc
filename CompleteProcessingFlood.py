@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*
 
-
 import dbf
 import unicodedata
 import re
@@ -65,7 +64,17 @@ class Progetto(object):
             print "No Population Raster......"
             self.population_raster = "None"
 
-        self.flood_aggregated = "C:/data/tools/sparc/input_data/flood/merged/" + self.paese + "_all_rp_rcl.tif"
+        #Unica directory merged
+        #self.flood_aggregated = "C:/data/tools/sparc/input_data/flood/merged/" + self.paese + "_all_rp_rcl.tif"
+
+        #Multi directories con iso name
+        locazione_file = "C:/data/tools/sparc/input_data/flood/gar15_ar/Flood/" + self.iso3 + "/" + self.iso3 + "_all_rp_rcl.tif"
+        if os.path.isfile(locazione_file):
+            self.flood_aggregated = locazione_file
+        else:
+            print "No Flood Raster......"
+            self.flood_aggregated = "None"
+
         self.historical_accidents = "C:/data/tools/sparc/input_data/historical_data/floods.csv"
 
         if os.path.isfile("C:/data/tools/sparc/input_data/geocoded/risk_map/" + self.paese + ".tif"):

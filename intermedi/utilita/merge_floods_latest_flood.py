@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 __author__ = 'fabio.lana'
 
-import os, sys
-from osgeo import ogr, gdal
+import os,sys
+from osgeo import gdal
 from osgeo import gdalnumeric
 from osgeo.gdalconst import *
 import numpy as np
 import glob
+
 gdal.AllRegister()
-
-
 use_numeric = False
 
 def prepare_iso_list():
@@ -89,7 +88,7 @@ def merge_floods(dirPaese):
     ar500 = gdalnumeric.LoadFile(im_rp_500).astype(np.int16)
     ar1000 = gdalnumeric.LoadFile(im_rp_1000).astype(np.int16)
     somma = ar25 + ar50 + ar100 + ar200 + ar500 + ar1000
-    gdalnumeric.SaveArray(somma, dirPaese + "\\" + iso_paese + "_all_rp.tif", format="GTiff", prototype = im_rp_1000)
+    gdalnumeric.SaveArray(somma, dirPaese + "\\" + iso_paese + "_all_rp.tif", format="GTiff", prototype=im_rp_1000)
 
 def reclass_flood(dir_paese):
 
@@ -110,7 +109,11 @@ def reclass_flood(dir_paese):
     arcpy.gp.Reclassify_sa(paese_all_rp, "Value", "0 NODATA;1000 1000;1500 500;1700 200;1800 100;1850 50;1875 25", paese_all_rp_rcl, "DATA")
 
 for dir_paese in prepare_iso_list():
-    convert_floods_grd_tif(dir_paese)
-    merge_floods(dir_paese)
-    reclass_flood(dir_paese)
+     convert_floods_grd_tif(dir_paese)
+     merge_floods(dir_paese)
+     reclass_flood(dir_paese)
 
+#dir_paese = r"C:\data\tools\sparc\input_data\flood\gar15_ar\Flood\RUS"
+#convert_floods_grd_tif(dir_paese)
+#merge_floods(dir_paese)
+#reclass_flood(dir_paese)
