@@ -172,7 +172,7 @@ class GeocodeEMDAT(object):
                         fuori += 1
             csvfile_out.close()
         csvfile_in.close()
-        print "dentro %d" % dentro, "fuori %d" % fuori
+        return dentro, fuori
 
 class CreateGeocodedShp(object):
 
@@ -184,6 +184,7 @@ class CreateGeocodedShp(object):
 
     def creazione_file_shp(self):
 
+        print("Lo scrivo in %s" % str(self.outShp))
         # Remove output shapefile if it already exists
         if os.path.exists(self.outShp):
             self.outDriver.DeleteDataSource(self.outShp)
@@ -222,8 +223,8 @@ class CreateGeocodedShp(object):
         w.save(self.outShp)
 
 hazard = "Drought"
-oggetto_EMDAT = ScrapingEMDAT(hazard)
-richiesta_paese = oggetto_EMDAT.scrape_EMDAT()
+OBJ_EMDAT = ScrapingEMDAT(hazard)
+richiesta_paese = OBJ_EMDAT.scrape_EMDAT()
 danni_paese = richiesta_paese['data']
 df_danni = pd.DataFrame(danni_paese)
 df_danni = df_danni.set_index('disaster_no')
@@ -232,12 +233,12 @@ df_danni = df_danni.set_index('disaster_no')
 #richiesta.write_in_db(df_danni)
 #di_che_parliamo = richiesta.read_from_db(hazard)
 
-paese = df_danni.country_name[0]
-iso = df_danni.iso[0]
 eventi_by_coutry = df_danni.groupby('iso')
-df_afg = eventi_by_coutry.get_group(iso)
+df_paese = eventi_by_coutry.get_group('AFG')
+paese = df_paese.country_name[0]
+iso = df_paese.iso[0]
 df_afg_valori = eventi_by_coutry.get_group(iso).values
-lista_locazioni = list(df_afg.location)
+lista_locazioni = list(df_paese.location)
 
 lista_da_geocodificare = []
 for locazione in lista_locazioni:
@@ -245,11 +246,13 @@ for locazione in lista_locazioni:
     for loca in loca_splittate:
         lista_da_geocodificare.append(loca.strip())
 
-oggetto_NOMINATIM = GeocodeEMDAT(paese)
-#oggetto_NOMINATIM.geolocate_accidents(lista_da_geocodificare,hazard)
-#oggetto_NOMINATIM.calc_poligono_controllo()
-
-oggetto_GISFILE = CreateGeocodedShp(paese,hazard)
-oggetto_GISFILE.creazione_file_shp()
+OBJ_NOMINATIM = GeocodeEMDAT(paese)
+OBJ_NOMINATIM.geolocate_accidents(lista_da_geocodificare,hazard)
+quanti_dentro = OBJ_NOMINATIM.calc_poligono_controllo()
+trovati_alcuni_dentro = quanti_dentro[0]
+print "Dentro ci sono %d eventi" % trovati_alcuni_dentro
+if trovati_alcuni_dentro > 0:
+    OBJ_GISFILE = CreateGeocodedShp(paese, hazard)
+    OBJ_GISFILE.creazione_file_shp()
 
 
