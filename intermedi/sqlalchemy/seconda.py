@@ -3,8 +3,8 @@ __author__ = 'fabio.lana'
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import create_session, mapper,session
 
-engine = create_engine(r'postgresql://geonode:geonode@localhost/geonode-imports', echo=True)
-metadata = MetaData(engine)
+engine = create_engine(r'postgresql://geonode:geonode@localhost/geonode-imports') #, echo=True)
+metadata = MetaData(engine,schema='test')
 conn = engine.connect()
 
 conn.execute("SET search_path TO test")
@@ -23,8 +23,8 @@ emailmapper = mapper(Email, emails)
 
 session = create_session()
 
-mary = session.query(User, users.c.name)
-print mary.users_age
+mary = session.query(User, users.c.age)
+print mary
 # close it.  if you're using connection pooling, the
 # search path is still set up there, so you might want to
 # revert it first

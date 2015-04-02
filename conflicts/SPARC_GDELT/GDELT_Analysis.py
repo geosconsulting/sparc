@@ -118,7 +118,6 @@ class GDELT_Analysis(object):
                             urcrnrlon=ulon, urcrnrlat=ulat)  # Upper right corner
         # Draw important features
         event_map.bluemarble()
-
         plt.show()
 
     def GDELT_interactions_maplot(self,counts_int):

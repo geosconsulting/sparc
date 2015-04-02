@@ -56,7 +56,7 @@ def data_processing_module_flood(paese):
         newMonthlyAssessment.population_flood_prone_areas()
 
         file_controllo = generazione_di_fenomeni.dirOutPaese + "/" + str(paese) + ".txt"
-
+        #print file_controllo
         if processo_controllo == 0:
             if os.path.isfile(file_controllo):
                 os.remove(file_controllo)

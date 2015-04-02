@@ -30,7 +30,6 @@ class AppSPARC:
         self.button = Button(frame, text="Flood Assessment", fg="blue", command=self.national_calc_flood).pack(side=LEFT)
         self.button = Button(frame, text="Drought Assessment", fg="maroon", command=self.national_calc_drought).pack(side=LEFT)
 
-
         root = Tk()
         root.title("SPARC Console")
         self.area_messaggi = Text(root, height=15, width=60, background="black", foreground="green")

@@ -135,9 +135,12 @@ class Progetto(object):
 
     def livelli_amministrativi_0_1(self, code_admin):
 
+        print "cerco %s" % code_admin
         comando = "SELECT ADM0_CODE,ADM1_NAME,ADM1_code FROM sparc_gaul_wfp_iso WHERE adm2_code=" + str(code_admin) + ";"
         self.cur.execute(comando)
+        #print comando
         for row in self.cur:
+            print row
             Progetto.ADM0_GAUL_code = row[0]
             Progetto.ADM1_GAUL_name = row[1]
             Progetto.ADM1_GAUL_code = row[2]
@@ -780,7 +783,7 @@ class ManagePostgresDB(Progetto):
         lista = []
         for adm in adms:
             #print adm
-            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_name, adm2_code FROM sparc_gaul_wfp_iso WHERE adm2_code = '" + adm + "' AND adm0_name = '" + self.paese + "';"
+            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_code, adm2_name FROM sparc_gaul_wfp_iso WHERE adm2_code = '" + adm + "' AND adm0_name = '" + self.paese + "';"
             #print sql
             self.cur.execute(sql)
             risultati = self.cur.fetchall()
@@ -788,15 +791,16 @@ class ManagePostgresDB(Progetto):
 
         dct_valori_amministrativi = {}
         for indice in range(0, len(lista)):
-            radice_dct = lista[indice][0][6]
+            #print lista[indice]
+            radice_dct = lista[indice][0][5]
             dct_valori_amministrativi[radice_dct] = {}
             dct_valori_amministrativi[radice_dct]["iso3"] = str(lista[indice][0][0].strip())
             dct_valori_amministrativi[radice_dct]["adm0_name"] = str(lista[indice][0][1].strip())
             dct_valori_amministrativi[radice_dct]["adm0_code"] = str(lista[indice][0][2])
             dct_valori_amministrativi[radice_dct]["adm1_code"] = str(lista[indice][0][3])
             dct_valori_amministrativi[radice_dct]["adm1_name"] = str(lista[indice][0][4].strip())
-            dct_valori_amministrativi[radice_dct]["adm2_name"] = str(lista[indice][0][5].strip())
-            dct_valori_amministrativi[radice_dct]["adm2_code"] = str(lista[indice][0][6])
+            dct_valori_amministrativi[radice_dct]["adm2_code"] = str(lista[indice][0][5])
+            dct_valori_amministrativi[radice_dct]["adm2_name"] = str(lista[indice][0][6].strip())
 
         lista_rp = [25, 50, 100, 200, 500, 1000]
         for valore in dct_valori_inondazione_annuale.items():
@@ -836,14 +840,14 @@ class ManagePostgresDB(Progetto):
                     except:
                         val1000 = 0
 
-                    linee.append(str(amministrativa_dct_amministrativi[1]['iso3']).upper() + "','" + str(amministrativa_dct_amministrativi[1]['adm0_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm0_code'] +
-                            ",'" + str(amministrativa_dct_amministrativi[1]['adm1_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm1_code'] +
-                            "," + amministrativa_dct_amministrativi[1]['adm2_code'] + ",'" + str(adm2_amministrativa) +
-                            "'," + str(val25) + "," + str(val50) + "," + str(val100) + "," + str(val200) + "," + str(val500) + "," + str(val1000))
+                    comando = str(amministrativa_dct_amministrativi[1]['iso3']).upper() + "','" + str(amministrativa_dct_amministrativi[1]['adm0_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm0_code'] + \
+                            ",'" + str(amministrativa_dct_amministrativi[1]['adm1_name']).capitalize() + "'," + amministrativa_dct_amministrativi[1]['adm1_code'] + \
+                            "," + amministrativa_dct_amministrativi[1]['adm2_code'] + ",'" + str(amministrativa_dct_amministrativi[1]['adm2_name']) + \
+                            "'," + str(val25) + "," + str(val50) + "," + str(val100) + "," + str(val200) + "," + str(val500) + "," + str(val1000)
+                    linee.append(comando)
 
         lista_comandi = []
         for linea in linee:
-            print linea
             inserimento = "INSERT INTO " + "public.sparc_annual_pop" + \
                 " (iso3,adm0_name,adm0_code,adm1_name,adm1_code,adm2_code,adm2_name,rp25,rp50,rp100,rp200,rp500,rp1000)" \
                 "VALUES('" + linea + ");"

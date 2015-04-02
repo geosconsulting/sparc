@@ -5,14 +5,11 @@ import lxml.html as lh
 import urllib
 import zipfile
 import os
-import numpy as np
-import pandas as pd
-import pandas.io.sql as psql
 import datetime as dt
 import matplotlib.pyplot as plt
-from mpl_toolkits.basemap import Basemap
+import pandas as pd
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData
 from collections import defaultdict
 
 gdelt_base_url = 'http://data.gdeltproject.org/events/'
@@ -178,10 +175,6 @@ def gdelt_pandas_date(returned_df):
     returned_df['Date'] = pd.Series([pd.to_datetime(date) for date in returned_df['SQLDATE']], index= returned_df.index)
     print returned_df.head()
 
-    #TODO: il campo e'convertito ma adesso devo fare riferimento alle date per plottare le serie
-    #TODO: e' solo un problema di indirizzare il campo date ma Pandas e' un casino in questo senso
-    #montly_df['ActionGeo_Type'].hist(by=montly_df['date'])
-    #plt.show()
     bymonth = returned_df.groupby('Date')
     bygroup_type = returned_df.groupby(['Date', 'ActionGeo_Type'])
     print(bygroup_type.describe())
@@ -296,14 +289,19 @@ def analizziamo_dati():
 
     engine = create_engine(r'postgresql://geonode:geonode@localhost/geonode-imports')
     connection = engine.connect()
-    sql = 'SELECT "Quad* FROM conflicts."gd_Kyrgyzstan" WHERE "Actor1Name" = \'ACTIVIST\';'
-    analisi = psql.read_sql(sql, engine)
+    metadata = MetaData(engine, schema='conflicts')
+    table_name = 'gd_kyrgyzstan_historical'
+    returned_df = pd.DataFrame(pd.io.sql.read_sql_table(table_name, engine, schema='conflicts', index_col='Day'))
+    returned_df['Date'] = pd.Series([pd.to_datetime(date) for date in returned_df.index], index= returned_df.index)
+    returned_df['Year'] = pd.DatetimeIndex(returned_df['Date']).year
+    returned_df['Month'] = pd.DatetimeIndex(returned_df['Date']).month
+    returned_df['Day'] = pd.DatetimeIndex(returned_df['Date']).day
+
     connection.close()
 
-    return analisi
+    return returned_df
 
-def main():
-
+def old_calls():
     pass
     ######## PICKLE CREATI CON INTERFACCIA ########
     #depickle_pandas('South Sudan')
@@ -340,19 +338,36 @@ def main():
     ############## CHARTARE I DATI ###############
     #chart_from_masterReduced()
 
+def main():
+
+    ritornati = analizziamo_dati()
+
+    pivot = pd.pivot_table(ritornati, values="Day", index=["Year", "Month"], columns=["QuadCategory"], aggfunc=len)
+    pivot = pivot.fillna(0) # Replace any missing data with zeros
+    pivot = pivot.reset_index()
+    #print pivot
+    # date-generating function:
+    get_date = lambda x: dt.datetime(year=int(x[0]), month=int(x[1]), day=1)
+
+    pivot["date"] = pivot.apply(get_date, axis=1) # Apply row-wise
+    pivot = pivot.set_index("date") # Set the new date column as the index
+
+    # Now we no longer need the Year and Month columns, so let's drop them:
+    pivot = pivot[["1", "2", "3", "4"]]
+    # Rename the QuadCat columns
+    pivot = pivot.rename(columns={"1": "Material Cooperation",
+                                  "2": "Verbal Cooperation",
+                                  "3": "Verbal Conflict",
+                                  "4": "Material Conflict"})
+    print pivot
+
+    pivot.plot(figsize=(12, 6))
+    plt.show()
+
 if __name__ == "__main__":
     main()
 
-ritornati = analizziamo_dati()
-ritornati['data_conv'] = pd.Series([pd.to_datetime(date) for date in ritornati['SQLDATE']], index=ritornati.index)
-# ritornati['mesi'] = ritornati['MonthYear'].str[4:]
-#
-# print ritornati.head()
-# #print ritornati.mesi.head()
-#
-# ts = pd.Series(ritornati['ActionGeo_Type'])
-# print ts.head()
-#
-# raggruppati = ritornati.groupby('mesi').count()
-# ts1= raggruppati['ActionGeo_Type']
-# print ts1
+# 1. Material Cooperation
+# 2. Verbal Cooperation
+# 3. Verbal Conflict
+# 4. Material Conflict
