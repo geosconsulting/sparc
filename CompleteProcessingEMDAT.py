@@ -8,7 +8,8 @@ import os
 from geopy.geocoders import Nominatim
 from geopy.geocoders import GeoNames
 import shapefile
-import fiona
+import psycopg2
+import psycopg2.extras
 from shapely.geometry import Point, Polygon, asShape, box
 from osgeo import ogr
 ogr.UseExceptions()
@@ -43,8 +44,9 @@ class ScrapingEMDAT(object):
 
 class GeocodeEMDAT(object):
 
-    def __init__(self, paese):
+    def __init__(self, paese,hazard):
         self.paese = paese
+        self.hazard = hazard
         self.geolocator = Nominatim()
         self.geolocator_geonames = GeoNames(country_bias = self.paese, username='fabiolana', timeout=1)
 
@@ -137,8 +139,8 @@ class GeocodeEMDAT(object):
 
     def calc_poligono_controllo(self):
 
-        coords_file_in = "c:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + hazard + ".txt"
-        coords_file_out = str('c:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/' + str(self.paese) + hazard + '.csv')
+        coords_file_in = "c:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + self.hazard + ".txt"
+        coords_file_out = str('c:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/' + str(self.paese) + self.hazard + '.csv')
 
         dentro = 0
         fuori = 0
@@ -222,37 +224,38 @@ class CreateGeocodedShp(object):
         #Save shapefile
         w.save(self.outShp)
 
-hazard = "Drought"
-OBJ_EMDAT = ScrapingEMDAT(hazard)
-richiesta_paese = OBJ_EMDAT.scrape_EMDAT()
-danni_paese = richiesta_paese['data']
-df_danni = pd.DataFrame(danni_paese)
-df_danni = df_danni.set_index('disaster_no')
+class ManagePostgresDBDrought(object):
 
-#TRATTAMENTO DATI IN DB
-#richiesta.write_in_db(df_danni)
-#di_che_parliamo = richiesta.read_from_db(hazard)
+    def all_country_db(self):
 
-eventi_by_coutry = df_danni.groupby('iso')
-df_paese = eventi_by_coutry.get_group('AFG')
-paese = df_paese.country_name[0]
-iso = df_paese.iso[0]
-df_afg_valori = eventi_by_coutry.get_group(iso).values
-lista_locazioni = list(df_paese.location)
+        schema = 'public'
+        dbname = "geonode-imports"
+        user = "geonode"
+        password = "geonode"
 
-lista_da_geocodificare = []
-for locazione in lista_locazioni:
-    loca_splittate = locazione.split(',')
-    for loca in loca_splittate:
-        lista_da_geocodificare.append(loca.strip())
+        try:
+            connection_string = "dbname=%s user=%s password=%s" % (dbname, user, password)
+            self.conn = psycopg2.connect(connection_string)
+        except Exception as e:
+            print e.message
 
-OBJ_NOMINATIM = GeocodeEMDAT(paese)
-OBJ_NOMINATIM.geolocate_accidents(lista_da_geocodificare,hazard)
-quanti_dentro = OBJ_NOMINATIM.calc_poligono_controllo()
-trovati_alcuni_dentro = quanti_dentro[0]
-print "Dentro ci sono %d eventi" % trovati_alcuni_dentro
-if trovati_alcuni_dentro > 0:
-    OBJ_GISFILE = CreateGeocodedShp(paese, hazard)
-    OBJ_GISFILE.creazione_file_shp()
+        self.cur = self.conn.cursor()
+        comando = "SELECT DISTINCT adm0_name FROM sparc_gaul_wfp_iso;"
+
+        try:
+            self.cur.execute(comando)
+        except psycopg2.ProgrammingError as laTabellaNonEsiste:
+            descrizione_errore = laTabellaNonEsiste.pgerror
+            codice_errore = laTabellaNonEsiste.pgcode
+            print descrizione_errore, codice_errore
+            return codice_errore
+
+        paesi = []
+        for paese in self.cur:
+            paesi.append(paese[0])
+        return sorted(paesi)
+
+
+
 
 
