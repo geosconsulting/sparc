@@ -224,7 +224,7 @@ class CreateGeocodedShp(object):
         #Save shapefile
         w.save(self.outShp)
 
-class ManagePostgresDBDrought(object):
+class ManagePostgresDBEMDAT(object):
 
     def all_country_db(self):
 

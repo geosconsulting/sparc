@@ -39,7 +39,7 @@ class AppSPARC_EMDAT:
 
     def collect_codes_country_level(self):
 
-        paesi = completeEMDAT.ManagePostgresDBDrought()
+        paesi = completeEMDAT.ManagePostgresDBEMDAT()
         self.lista_paesi = paesi.all_country_db()
 
     def national_emdata_geocoding(self):

@@ -6,7 +6,6 @@ import os
 from osgeo import ogr
 ogr.UseExceptions()
 import glob
-import csv
 import psycopg2
 import psycopg2.extras
 import arcpy
@@ -49,11 +48,9 @@ class ProjectDrought(object):
 
         os.chdir(self.drought_monthly_tifs_dir)
         self.drought_monthly_tifs = glob.glob("*.tif")
-        #print self.drought_monthly_tifs
 
         os.chdir(self.drought_seasonal_tifs_dir)
         self.drought_seasonal_tifs = glob.glob("*.tif")
-        #print self.drought_seasonal_tifs
 
     def admin_2nd_level_list(self, paese):
 
