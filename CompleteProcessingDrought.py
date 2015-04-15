@@ -15,6 +15,7 @@ env.overwriteOutput = "true"
 
 class ProjectDrought(object):
 
+
     def __init__(self, dbname, user, password):
 
         self.proj_dir = "c:/data/tools/sparc/projects/drought/"
@@ -85,13 +86,14 @@ class ProjectDrought(object):
             lista_admin2.append(nome_per_combo)
 
         for i in range(len(lista_iso)):
-            listone[lista_iso[i]] = {'name_orig': lista_admin2[i],'name_clean': lista_clean[i]}
+            listone[lista_iso[i]] = {'name_orig': lista_admin2[i], 'name_clean': lista_clean[i]}
 
         return lista_admin2, listone
 
     def administrative_level_0_1_fetch(self, code_admin):
 
-        comando = "SELECT iso2,iso3,adm0_code,adm0_name,adm1_name,adm1_code FROM sparc_gaul_wfp_iso WHERE adm2_code=" + str(code_admin) + ";"
+        comando = "SELECT iso2,iso3,adm0_code,adm0_name,adm1_name,adm1_code FROM sparc_gaul_wfp_iso WHERE adm2_code=" + \
+                  str(code_admin) + ";"
         self.cur.execute(comando)
         for row in self.cur:
             ProjectDrought.ISO2_code = row[0]
@@ -139,6 +141,7 @@ class ProjectDrought(object):
 
 class HazardAssessmentDrought(ProjectDrought):
 
+
     def extract_poly2_admin(self, paese, name_admin, code):
 
         filter_field_name = '"' + self.campo_nome_paese + "," + self.campo_iso_paese + "," + self.campo_nome_admin1 + "," + \
@@ -153,7 +156,8 @@ class HazardAssessmentDrought(ProjectDrought):
         inLayer.SetAttributeFilter("ADM2_CODE=" + str(code))
 
         # Create the output LayerS
-        outShapefile = os.path.join(self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin + ".shp")
+        outShapefile = os.path.join(self.proj_dir + paese + "/" + name_admin + "_" + str(code) + "/" + name_admin +
+                                    ".shp")
         outDriver = ogr.GetDriverByName("ESRI Shapefile")
 
         # Remove output shapefile if it already exists
@@ -162,7 +166,7 @@ class HazardAssessmentDrought(ProjectDrought):
 
         # Create the output shapefile
         outDataSource = outDriver.CreateDataSource(outShapefile)
-        out_lyr_name = (os.path.splitext(os.path.split(outShapefile)[1])[0]).replace("\n","")
+        out_lyr_name = (os.path.splitext(os.path.split(outShapefile)[1])[0]).replace("\n", "")
         out_layer = outDataSource.CreateLayer(str(out_lyr_name), inLayerProj, geom_type=ogr.wkbMultiPolygon)
 
         # Add input Layer Fields to the output Layer if it is the one we want
@@ -207,7 +211,7 @@ class HazardAssessmentDrought(ProjectDrought):
         pop_out = arcpy.Raster(self.lscan_cut_adm2)
         scrivi_qui = arcpy.Describe(pop_out).path
         scrivi_questo = str(pop_out).split("/")[7].split("_")[0]
-        #one or both raster could be empty (no flood in polygon) I chech that
+        # one or both raster could be empty (no flood in polygon) I chech that
         sum_val_pop = int(arcpy.GetRasterProperties_management(pop_out, "UNIQUEVALUECOUNT")[0])
         for dr_temp in self.adm2_drought_months:
             valore_taglio = str(dr_temp.split("/")[-1]).count("_")
@@ -218,7 +222,7 @@ class HazardAssessmentDrought(ProjectDrought):
             pop_stat_dbf = scrivi_qui + "/" + nome_tabella + "_" + str(contatore) + "_pop_stat.dbf"
             if sum_val_fld > 0 and sum_val_pop > 0:
                 try:
-                    arcpy.gp.ZonalStatisticsAsTable_sa(dr_out, "VALUE", pop_out, pop_stat_dbf , "DATA", "SUM")
+                    arcpy.gp.ZonalStatisticsAsTable_sa(dr_out, "VALUE", pop_out, pop_stat_dbf, "DATA", "SUM")
                 except Exception as e:
                     print e.message
             else:
