@@ -27,6 +27,7 @@ def sqlalch_connect(ip_in, ip_out, table_name):
     # SUPERATO DALLA LETTURA DIRETTA DA SQL CON PANDAS SQLALCHEMY
 
     df_in_sql = pd.read_sql_table(table_name, engine_in, index_col='id')
+
     engine_out = create_engine(r'postgresql://geonode:geonode@' + ip_out + '/geonode-imports')
     try:
         conn_out = engine_out.connect()
@@ -38,11 +39,13 @@ def sqlalch_connect(ip_in, ip_out, table_name):
 
 def main():
     ip_in = '127.0.0.1'
-    ip_out = '10.65.57.81'
-    tables = ['sparc_annual_pop', 'sparc_population_month', 'sparc_population_month_drought']
+    #ip_out = '10.65.57.81'
+    ip_out = '10.65.57.45'
+    #tables = ['sparc_annual_pop', 'sparc_population_month', 'sparc_population_month_drought']
+    #tables = ['sparc_adm2_area_population', 'sparc_adm2_density', 'sparc_adm2_population_rp']
+    tables = ['sparc_adm2_density']
     for table_name in tables:
         sqlalch_connect(ip_in, ip_out, table_name)
-
 
 if __name__ == "__main__":
     main()

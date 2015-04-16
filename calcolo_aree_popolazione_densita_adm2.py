@@ -89,13 +89,13 @@ try:
 except Exception as e:
     print e.message
 
-
 table_area = 'sparc_adm2_area_population'
 table_pop = 'sparc_annual_pop'
-table_adm2_area_population = 'sparc_adm2_area_population'
 
 engine = create_engine(r'postgresql://geonode:geonode@127.0.0.1/geonode-imports')
 df_pop_area_adm2 = estrazione_dati_da_dbf_dello_shape_e_conversione_pandas()
+
+table_adm2_area_population = 'sparc_adm2_area_population'
 #df_pop_area_adm2.to_sql(table_adm2_area_population, engine, schema='public')
 
 
