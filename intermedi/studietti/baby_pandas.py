@@ -84,7 +84,6 @@ df.boxplot(column='Age', by = 'New_Salutation')
 df.boxplot(column='Age', by = ['Sex','Pclass'])
 plt.show()
 
-
 # df_sort = df.sort(['name'],ascending = True)
 # #print df_sort.head()
 #

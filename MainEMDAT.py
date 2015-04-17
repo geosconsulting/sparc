@@ -57,7 +57,7 @@ class AppSPARC_EMDAT:
         df_danni = df_danni.set_index('disaster_no')
 
         #TRATTAMENTO DATI IN DB
-        #richiesta.write_in_db(df_danni)
+        #OBJ_EMDAT.write_in_db(df_danni)
         #di_che_parliamo = richiesta.read_from_db(hazard)
 
         eventi_by_coutry = df_danni.groupby('iso')
@@ -74,7 +74,7 @@ class AppSPARC_EMDAT:
                 for loca in loca_splittate:
                     lista_da_geocodificare.append(loca.strip())
 
-        OBJ_NOMINATIM = completeEMDAT.GeocodeEMDAT(paese,hazard)
+        OBJ_NOMINATIM = completeEMDAT.GeocodeEMDAT(paese, hazard)
         OBJ_NOMINATIM.geolocate_accidents(lista_da_geocodificare, hazard)
         quanti_dentro = OBJ_NOMINATIM.calc_poligono_controllo()
         trovati_alcuni_dentro = quanti_dentro[0]
