@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import Session
 
 engine = create_engine(r'postgresql://geonode:geonode@localhost/geonode-imports')#, echo=True)
-metadata = MetaData(engine,schema='test')
+metadata = MetaData(engine, schema='test')
 conn = engine.connect()
 conn.execute("SET search_path TO test")
 tab_utenti = Table('users', metadata, autoload=True, autoload_with=conn, postgresql_ignore_search_path=True)
