@@ -26,8 +26,8 @@ def address_to_latlng(address):
     """
     location_geo = geocode(address)
     location =  {}
-    location['lat'] = location_geo['lat']
-    location['lon'] = location_geo['lon']
+    location['lat'] = location_geo['lon']
+    location['lon'] = location_geo['lat']
     print location
     return tuple(location.values())
 
@@ -53,7 +53,6 @@ def basic_world_map(ax=None, region='world'):
     return m
 
 data = pd.DataFrame.from_csv('F1-circuits.csv', header=0, sep=';', index_col=None, parse_dates=False, encoding='latin-1')
-
 maximum = data['Grands Prix held'].max()
 minimum = data['Grands Prix held'].min()
 f, ax = plt.subplots(figsize=(20, 8))

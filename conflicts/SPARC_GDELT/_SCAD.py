@@ -53,25 +53,26 @@ def basic_world_map(ax=None, region='world'):
     m.fillcontinents(color='coral', alpha=0.3)
     return m
 
-data = pd.DataFrame.from_csv(r"C:\data\tools\sparc\conflicts\data\SCAD\Africa\SCAD 3.1 For Public Release\SCAD31.csv", header=0, sep=',', index_col=None, parse_dates=False, encoding='latin-1')
-
-maximum = data['Grands Prix held'].max()
-minimum = data['Grands Prix held'].min()
-f, ax = plt.subplots(figsize=(20, 8))
-ax.set_title('Formula 1 Grand Prix Circuits since 1950\n(Radius by number of races held)')
-m = basic_world_map(ax)
-
-for cir, loc, num in zip(data['Circuit'].values, data['Location'].values, data['Grands Prix held'].values):
-    lat, lng = address_to_latlng(cir + ', ' + loc)
-    x, y = m(lat, lng)
-    m.scatter(x, y, s=np.pi * (3 + (num-minimum)/(maximum-minimum)*17)**2, marker='o', c='red', alpha=0.7)
-f.savefig('f1-circuits.png', dpi=72, transparent=False, bbox_inches='tight')
-
-f, ax = plt.subplots(figsize=(20, 8))
-ax.set_title('Formula 1 Grand Prix Circuits in Europe since 1950\n(Radius by number of races held)')
-m = basic_world_map(ax, 'europe')
-for cir, loc, num in zip(data['Circuit'].values, data['Location'].values, data['Grands Prix held'].values):
-    lat, lng = address_to_latlng(cir + ', ' + loc)
-    x, y = m(lat, lng)
-    m.scatter(x, y, s=np.pi * (3 + (num-minimum)/(maximum-minimum)*17)**2, marker='o', c='red', alpha=0.7)
-f.savefig('f1-circuits-europe.png', dpi=72, transparent=False, bbox_inches='tight')
+data = pd.io.excel.read_excel(r"C:/data/tools/sparc/conflicts/docs/Kevin/rmi_southsudan final.xls")
+numero_eventi_per_anno = data.groupby(['year'])
+print numero_eventi_per_anno['subdivision'].count()
+#maximum = data['Grands Prix held'].max()
+#minimum = data['Grands Prix held'].min()
+# f, ax = plt.subplots(figsize=(20, 8))
+# ax.set_title('balh balh b;ah\n(Radius by number of races held)')
+# m = basic_world_map(ax)
+#
+# for cir, loc, num in zip(data['conflict'].values, data['subdivision'].values, data['Grands Prix held'].values):
+#     lat, lng = address_to_latlng(cir + ', ' + loc)
+#     x, y = m(lat, lng)
+#     #m.scatter(x, y, s=np.pi * (3 + (num-minimum)/(maximum-minimum)*17)**2, marker='o', c='red', alpha=0.7)
+# #f.savefig('f1-circuits.png', dpi=72, transparent=False, bbox_inches='tight')
+#
+# f, ax = plt.subplots(figsize=(20, 8))
+# ax.set_title('Formula 1 Grand Prix Circuits in Europe since 1950\n(Radius by number of races held)')
+# m = basic_world_map(ax, 'europe')
+# for cir, loc, num in zip(data['Circuit'].values, data['Location'].values, data['Grands Prix held'].values):
+#     lat, lng = address_to_latlng(cir + ', ' + loc)
+#     x, y = m(lat, lng)
+#     m.scatter(x, y, s=np.pi * (3 + (num-minimum)/(maximum-minimum)*17)**2, marker='o', c='red', alpha=0.7)
+# f.savefig('f1-circuits-europe.png', dpi=72, transparent=False, bbox_inches='tight')
