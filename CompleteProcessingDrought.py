@@ -349,7 +349,7 @@ class ManagePostgresDBDrought(ProjectDrought):
             codice_errore = createErrore.pgcode
             print descrizione_errore, codice_errore
 
-    def collect_drought_poplation_frequencies_frm_dbfs(self):
+    def collect_drought_population_frequencies_frm_dbfs(self):
 
         direttorio = self.dirOutPaese
 
@@ -472,6 +472,14 @@ class ManagePostgresDBDrought(ProjectDrought):
             inserimento_mensili.append(inserimento)
 
         return lista, dct_all_admin_values ,inserimento_mensili
+
+    def clean_old_values_month_drought(self,paese):
+
+        conteggio = "SELECT COUNT (iso3) FROM sparc_population_month_drought WHERE adm0_name = '" + paese + "';"
+
+        if conteggio>0:
+            sql_clean = "DELETE FROM sparc_population_month_drought WHERE adm0_name = '"+ paese + "';"
+            self.cur.execute(sql_clean)
 
     def insert_drought_in_postgresql(self, lista_inserimento):
 

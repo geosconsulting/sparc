@@ -5,6 +5,9 @@ import sys
 from osgeo import ogr
 ogr.UseExceptions()
 
+from Tkinter import *
+import ttk
+
 import CompleteProcessingFlood as completeSparc
 
 paese = "India"
@@ -26,10 +29,8 @@ def data_processing_module_flood(paese):
 
         code_admin = aministrazione[0]
         nome_admin = aministrazione[1]['name_clean']
-
         generazione_di_fenomeni.livelli_amministrativi_0_1(code_admin)
-
-        generazione_di_fenomeni.creazione_struttura(nome_admin,code_admin)
+        generazione_di_fenomeni.creazione_struttura(nome_admin, code_admin)
         newHazardAssessment = completeSparc.HazardAssessmentCountryFlood(paese, nome_admin, code_admin,
                                                                     dbname, user, password)
         newHazardAssessment.estrazione_poly_admin()
@@ -41,6 +42,7 @@ def data_processing_module_flood(paese):
             #print "Population clipped...."
         elif newHazardAssessment.taglio_raster_popolazione() == "nopop":
             print "Population raster not yet released...."
+            return "Population data not available...."
             sys.exit()
 
         esiste_flood = newHazardAssessment.taglio_raster_inondazione_aggregato()
@@ -64,7 +66,9 @@ def data_processing_module_flood(paese):
 
         newMonthlyAssessment.calcolo_finale(file_controllo)
 
-def data_uploadin_module_flood(paese):
+    return "Flood Hazard Calculation Terminated....\n"
+
+def data_upload_module_flood(paese):
 
     wfp_countries = 'sparc_wfp_countries'
     wfp_areas = 'sparc_wfp_areas'
@@ -80,6 +84,8 @@ def data_uploadin_module_flood(paese):
         scrittura_tabelle.insert_values_in_postgres(sql_command_list_month)
 
     if scrittura_tabelle.check_tabella_month() == 'exists':
+        scrittura_tabelle.clean_old_values_month(paese)
+        scrittura_tabelle.save_changes_in_postgres()
         scrittura_tabelle.fetch_results()
         sql_command_list_month = scrittura_tabelle.collect_people_at_risk_montlhy_from_txt()
         scrittura_tabelle.insert_values_in_postgres(sql_command_list_month)
@@ -94,6 +100,8 @@ def data_uploadin_module_flood(paese):
         scrittura_tabelle.insert_values_in_postgres(sql_command_list_annual[2])
 
     if scrittura_tabelle.check_tabella_year() == 'exists':
+        scrittura_tabelle.clean_old_values_year(paese)
+        scrittura_tabelle.save_changes_in_postgres()
         dct_annuali = scrittura_tabelle.collect_annual_data_byRP_from_dbf_country()
         adms = []
         for raccolto in dct_annuali:
@@ -101,5 +109,7 @@ def data_uploadin_module_flood(paese):
         sql_command_list_annual = scrittura_tabelle.process_dict_with_annual_values(adms, dct_annuali)
         scrittura_tabelle.insert_values_in_postgres(sql_command_list_annual[2])
 
-    scrittura_tabelle.save_values_in_postgres()
+    scrittura_tabelle.save_changes_in_postgres()
     scrittura_tabelle.close_connection_with_postgres()
+
+    return "Flood Hazard Data Uploaded....\n"

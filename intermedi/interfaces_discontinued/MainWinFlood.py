@@ -131,7 +131,7 @@ class AppSPARC:
 
         import CountryCalculationsFlood
         CountryCalculationsFlood.data_processing_module_flood(paese)
-        CountryCalculationsFlood.data_uploadin_module_flood(paese)
+        CountryCalculationsFlood.data_upload_module_flood(paese)
 
 root = Tk()
 root.title("SPARC Flood Assessment")

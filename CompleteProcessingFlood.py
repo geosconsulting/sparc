@@ -858,6 +858,21 @@ class ManagePostgresDB(Progetto):
     #########  COMMON TASKS   #########
     #########  COMMON TASKS   #########
     #########  COMMON TASKS   #########
+    def clean_old_values_month(self,paese):
+
+        conteggio_mensile = "SELECT COUNT (iso3) FROM sparc_population_month WHERE adm0_name = '" + paese + "';"
+
+        if conteggio_mensile>0:
+            sql_clean_mensile = "DELETE FROM sparc_population_month WHERE adm0_name = '" + paese + "';"
+            self.cur.execute(sql_clean_mensile)
+
+    def clean_old_values_year(self,paese):
+
+        conteggio_annuale = "SELECT COUNT (iso3) FROM sparc_annual_pop WHERE adm0_name = '" + paese + "';"
+
+        if conteggio_annuale>0:
+            sql_clean = "DELETE FROM sparc_annual_pop WHERE adm0_name = '"+ paese + "';"
+            self.cur.execute(sql_clean)
 
     def insert_values_in_postgres(self,lista_inserimento):#ritornati_passati):
 
@@ -867,7 +882,7 @@ class ManagePostgresDB(Progetto):
             #print inserimento_singolo
             self.cur.execute(inserimento_singolo)
 
-    def save_values_in_postgres(self):
+    def save_changes_in_postgres(self):
         try:
             self.conn.commit()
             print "Changes saved"
