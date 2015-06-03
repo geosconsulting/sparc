@@ -80,9 +80,9 @@ class AppSPARC:
             section_pop_raster_cut = newDroughtAssessment.cut_rasters_drought(paese,nome_admin, code_admin)
 
             if section_pop_raster_cut == "sipop":
-                print "Population clipped...."
+                self.area_messaggi.insert(INSERT,"Population clipped....")
             elif section_pop_raster_cut == "nopop":
-                print "Population raster not available...."
+                self.area_messaggi.insert(INSERT,"Population raster not available....")
                 sys.exit()
 
         dizio_drought = db_conn_drought.collect_drought_population_frequencies_frm_dbfs()
@@ -99,6 +99,8 @@ class AppSPARC:
 
         if db_conn_drought.check_if_monthly_table_drought_exists() == 'exists':
              self.area_messaggi.insert(INSERT, "Table Drought Exist\n")
+             db_conn_drought.clean_old_values_month_drought(paese)
+             db_conn_drought.save_changes()
              db_conn_drought.insert_drought_in_postgresql(insert_list)
 
         db_conn_drought.save_changes()
