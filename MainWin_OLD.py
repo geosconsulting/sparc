@@ -5,9 +5,7 @@ __author__ = 'fabio.lana'
 import CompleteProcessingDrought as completeDrought
 
 from Tkinter import *
-import tkMessageBox
 import ttk
-import time
 
 class AppSPARC:
 
@@ -21,11 +19,7 @@ class AppSPARC:
         finestra.geometry("450x250+30+30")
 
         self.area_messaggi = Text(finestra, background="black", foreground="green")
-        self.area_messaggi.place(x=18, y=30, width=282, height= 215)
-
-        self.scr = Scrollbar(finestra, command = self.area_messaggi.yview)
-        self.scr.place(x=8, y= 30, width=10, height=215)
-        self.area_messaggi.config(yscrollcommand=self.scr.set)
+        self.area_messaggi.place(x =2, y = 30, width=300, height= 215)
 
         self.collect_codes_country_level()
         self.box_value_adm0 = StringVar()
@@ -34,72 +28,39 @@ class AppSPARC:
         self.box_adm0.current(0)
         self.box_adm0.place(x = 25 , y = 2, width=210, height=25)
 
-        #SECTION FOR FLOOD CALCULATION
-        #SECTION FOR FLOOD CALCULATION
-        frame_flood = Frame(finestra, height=32, width=400, bg="blue")
-        frame_flood.place(x = 305, y = 30, width=140, height=70)
-
-        self.button_flood = Button(finestra, text="Flood Assessment", fg="blue")
-        self.button_flood.bind('<Button-1>', lambda scelta: scegli_calcolo("flood"))
-        self.button_flood.place(x = 310, y = 35, width=130, height=25)
-
-        self.button_flood_upload = Button(finestra, text="Upload Data Manually", fg="blue", command= self.flood_upload)
-        self.button_flood_upload.place(x = 310, y = 70, width=130, height=25)
-        #SECTION FOR FLOOD CALCULATION
-        #SECTION FOR FLOOD CALCULATION
-
-        #SECTION FOR DROUGHT CALCULATION
-        #SECTION FOR DROUGHT CALCULATION
-        frame_drought = Frame(finestra, height=80, width=400, bg="maroon")
-        frame_drought.place(x = 305, y = 105, width=140, height=70)
-
-        self.button_drought = Button(finestra, text="Drought Assessment", fg="maroon")
-        self.button_drought.place(x = 310, y = 110, width=130, height=25)
-        self.button_drought.bind('<Button-1>', lambda scelta: scegli_calcolo("drought"))
-
-        self.button_drought_upload = Button(finestra, text="Upload Data Manually", fg="maroon", command= self.drought_upload)
-        self.button_drought_upload.place(x = 310, y = 145, width=130, height=25)
-        #SECTION FOR DROUGHT CALCULATION
-        #SECTION FOR DROUGHT CALCULATION
-
-        def scegli_calcolo(scelta):
-
-            attivo_nonAttivo = self.var_check.get()
-            paese = self.box_value_adm0.get()
-
-            if attivo_nonAttivo == 0 and scelta=='flood':
-                self.national_calc_flood(paese)
-            elif attivo_nonAttivo == 1 and scelta=='flood':
-                verifica = tkMessageBox.askyesno("Warning", "The calculation can take a very long time!!\nContinue?")
-                if verifica == True:
-                    self.world_calc_flood()
-                else:
-                    pass
-
-            elif attivo_nonAttivo == 0 and scelta=='drought':
-                self.national_calc_drought(paese)
-            else:
-                verifica = tkMessageBox.askyesno("Warning", "The calculation can take a very long time!!\nContinue?")
-                if verifica == True:
-                    self.world_calc_drought()
-                else:
-                    pass
-
-        def attiva_disattiva():
+        def cb():
             attivo_nonAttivo = self.var_check.get()
             print attivo_nonAttivo
             if attivo_nonAttivo == 0:
                 self.box_adm0.config(state='normal')
-                self.button_flood_upload.config(state='normal')
-                self.button_drought_upload.config(state='normal')
+                command_flood = "flood per paese"
+                command_drought = "drought per paese"
             else:
                 self.box_adm0.config(state='disabled')
-                self.button_flood_upload.config(state='disabled')
-                self.button_drought_upload.config(state='disabled')
+                command_flood = "flood per mondo"
+                command_drought = "drought per mondo"
 
         self.var_check = IntVar()
-        self.check_all = Checkbutton(finestra, text="All Countries", variable = self.var_check, command=attiva_disattiva)
-        self.check_all.place(x =310, y = 5, width=120, height=25)
+        check_all = Checkbutton(finestra, text="All Countries", variable = self.var_check, command=cb)
+        check_all.place(x =310, y = 5, width=120, height=25)
+
+        frame_flood = Frame(finestra, height=32, width=400, bg="blue")
+        frame_flood.place(x = 305, y = 30, width=140, height=70)
+
+        button_flood = Button(finestra, text="Flood Assessment", fg="blue", command=self.national_calc_flood)
+        button_flood.place(x = 310, y = 35, width=130, height=25)
+
+        button_flood_upload = Button(finestra, text="Upload Data Manually", fg="blue", command=self.flood_upload)
+        button_flood_upload.place(x = 310, y = 70, width=130, height=25)
+
+        frame_drought = Frame(finestra, height=80, width=400, bg="maroon")
+        frame_drought.place(x = 305, y = 105, width=140, height=70)
+
+        button_drought = Button(finestra, text="Drought Assessment", fg="maroon", command=self.national_calc_drought)
+        button_drought.place(x = 310, y = 110, width=130, height=25)
+
+        button_drought_upload = Button(finestra, text="Upload Data Manually", fg="maroon", command=self.drought_upload)
+        button_drought_upload.place(x = 310, y = 145, width=130, height=25)
 
         finestra.mainloop()
 
@@ -108,7 +69,9 @@ class AppSPARC:
         paesi = completeDrought.ManagePostgresDBDrought(self.dbname, self.user, self.password)
         self.lista_paesi = paesi.all_country_db()
 
-    def national_calc_drought(self,paese):
+    def national_calc_drought(self):
+
+        paese = self.box_value_adm0.get()
 
         db_conn_drought = completeDrought.ManagePostgresDBDrought(self.dbname, self.user, self.password)
         lista_admin2 = db_conn_drought.admin_2nd_level_list(paese)
@@ -155,9 +118,50 @@ class AppSPARC:
         self.area_messaggi.insert(INSERT, "Data for " + paese + " Uploaded in DB")
 
     def world_calc_drought(self):
-        paesi = self.lista_paesi
-        for paese in paesi:
-            self.national_calc_drought(paese)
+
+        for paese in self.lista_paesi:
+
+            db_conn_drought = completeDrought.ManagePostgresDBDrought(self.dbname, self.user, self.password)
+            lista_admin2 = db_conn_drought.admin_2nd_level_list(paese)
+
+            for aministrazione in lista_admin2[1].iteritems():
+
+                code_admin = aministrazione[0]
+                nome_admin = aministrazione[1]['name_clean']
+
+                #all_codes = aree_amministrative.livelli_amministrativi_0_1(code_admin)
+                #self.area_messaggi.insert(INSERT, all_codes)
+
+                db_conn_drought.file_structure_creation(nome_admin, code_admin)
+                newDroughtAssessment = completeDrought.HazardAssessmentDrought(self.dbname, self.user, self.password)
+                newDroughtAssessment.extract_poly2_admin(paese, nome_admin, code_admin)
+
+                section_pop_raster_cut = newDroughtAssessment.cut_rasters_drought(paese,nome_admin, code_admin)
+
+                if section_pop_raster_cut == "sipop":
+                    print "Population clipped...."
+                elif section_pop_raster_cut == "nopop":
+                    print "Population raster not available...."
+                    sys.exit()
+
+            dizio_drought = db_conn_drought.collect_drought_population_frequencies_frm_dbfs()
+            self.area_messaggi.insert(INSERT, "Data Collected\n")
+            adms = set()
+            for chiave,valori in sorted(dizio_drought.iteritems()):
+                adms.add(chiave.split("-")[1])
+            insert_list = db_conn_drought.prepare_insert_statements_drought_monthly_values(adms, dizio_drought)[2]
+            self.area_messaggi.insert(INSERT, "Data Ready for Upload in DB\n")
+
+            if db_conn_drought.check_if_monthly_table_drought_exists() == '42P01':
+                db_conn_drought.create_sparc_drought_population_month()
+                db_conn_drought.insert_drought_in_postgresql(insert_list)
+
+            if db_conn_drought.check_if_monthly_table_drought_exists() == 'exists':
+                 db_conn_drought.insert_drought_in_postgresql(insert_list)
+
+            db_conn_drought.save_changes()
+            db_conn_drought.close_connection()
+            self.area_messaggi.insert(INSERT, "Data for " + paese + " Uploaded in DB")
 
     def drought_upload(self):
 
@@ -175,7 +179,9 @@ class AppSPARC:
         risultato = ddup.insert_drought_in_postgresql(paese,raccolti_anno[2])
         self.area_messaggi.insert(INSERT,risultato)
 
-    def national_calc_flood(self,paese):
+    def national_calc_flood(self):
+
+        paese = self.box_value_adm0.get()
 
         import CountryCalculationsFlood
 
@@ -187,9 +193,14 @@ class AppSPARC:
 
     def world_calc_flood(self):
 
-        paesi = self.lista_paesi
+        paesi = self.box_value_adm0
         for paese in paesi:
-            self.national_calc_flood(paese)
+            self.box_value_adm0.set(paese)
+
+        # paese = self.box_value_adm0.get()
+        # import CountryCalculationsFlood
+        # CountryCalculationsFlood.data_processing_module_flood(paese)
+        # CountryCalculationsFlood.data_upload_module_flood(paese)
 
     def flood_upload(self):
 
