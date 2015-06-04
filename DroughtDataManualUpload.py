@@ -5,7 +5,7 @@ import glob
 import psycopg2
 import dbf
 
-def insert_drought_in_postgresql(lista_inserimento):
+def insert_drought_in_postgresql(paese,lista_inserimento):
 
     schema = 'public'
     dbname = 'geonode-imports'
@@ -15,26 +15,29 @@ def insert_drought_in_postgresql(lista_inserimento):
     try:
         connection_string = "dbname=%s user=%s password=%s" % (dbname, user, password)
         conn = psycopg2.connect(connection_string)
-        print "Connection opened"
     except Exception as e:
-        print e.message
+        return e.message
     cur = conn.cursor()
+
+    sql_clean = "DELETE FROM sparc_population_month_drought WHERE adm0_name = '"+ paese + "';"
+    cur.execute(sql_clean)
+    conn.commit()
 
     for inserimento_singolo in lista_inserimento:
         cur.execute(inserimento_singolo)
 
     try:
         conn.commit()
-        print "Changes saved"
     except:
-        print "Problem in saving data"
+        return "Problem in saving data"
 
     try:
         cur.close()
         conn.close()
-        print "Connection closed"
     except:
-        print "Problem in closing the connection"
+        return "Problem in closing the connection"
+
+    return "Data have been uploaded...\n"
 
 def collect_drought_poplation_frequencies_frm_dbfs(direttorio):
 
@@ -107,7 +110,7 @@ def prepare_insert_statements_drought_monthly_values(paese, adms, dct_values_ann
             connection_string = "dbname=%s user=%s password=%s" % (dbname, user, password)
             conn = psycopg2.connect(connection_string)
         except Exception as e:
-            print e.message
+            return e.message
         cur = conn.cursor()
 
         lista = []
@@ -159,15 +162,15 @@ def prepare_insert_statements_drought_monthly_values(paese, adms, dct_values_ann
             #print inserimento
             inserimento_mensili.append(inserimento)
 
-        return lista, dct_all_admin_values ,inserimento_mensili
+        return lista, dct_all_admin_values,inserimento_mensili
 
-paese = 'Benin'
-proj_dir = "c:/data/tools/sparc/projects/drought/"
-dirOutPaese = proj_dir + paese
-
-raccogli_da_files_anno = collect_drought_poplation_frequencies_frm_dbfs(dirOutPaese)
-adms=set()
-for chiave,valori in sorted(raccogli_da_files_anno.iteritems()):
-    adms.add(chiave.split("-")[1])
-raccolti_anno = prepare_insert_statements_drought_monthly_values(paese, adms, raccogli_da_files_anno)
-insert_drought_in_postgresql(raccolti_anno[2])
+# paese = 'Benin'
+# proj_dir = "c:/data/tools/sparc/projects/drought/"
+# dirOutPaese = proj_dir + paese
+#
+# raccogli_da_files_anno = collect_drought_poplation_frequencies_frm_dbfs(dirOutPaese)
+# adms=set()
+# for chiave,valori in sorted(raccogli_da_files_anno.iteritems()):
+#     adms.add(chiave.split("-")[1])
+# raccolti_anno = prepare_insert_statements_drought_monthly_values(paese, adms, raccogli_da_files_anno)
+# insert_drought_in_postgresql(raccolti_anno[2])

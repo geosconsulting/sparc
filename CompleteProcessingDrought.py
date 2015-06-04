@@ -473,7 +473,7 @@ class ManagePostgresDBDrought(ProjectDrought):
 
         return lista, dct_all_admin_values ,inserimento_mensili
 
-    def clean_old_values_month_drought(self,paese):
+    def clean_old_values_month_drought(self, paese):
 
         conteggio = "SELECT COUNT (iso3) FROM sparc_population_month_drought WHERE adm0_name = '" + paese + "';"
 

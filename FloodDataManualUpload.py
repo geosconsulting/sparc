@@ -5,7 +5,7 @@ import glob
 import psycopg2
 import dbf
 
-def inserisci_postgresql(lista_inserimento):
+def inserisci_postgresql(paese,lista_inserimento):
 
     schema = 'public'
     dbname = 'geonode-imports'
@@ -15,27 +15,29 @@ def inserisci_postgresql(lista_inserimento):
     try:
         connection_string = "dbname=%s user=%s password=%s" % (dbname, user, password)
         conn = psycopg2.connect(connection_string)
-        print "Connection opened"
     except Exception as e:
-        print e.message
+        return e.message
     cur = conn.cursor()
 
+    sql_clean = "DELETE FROM sparc_population_month WHERE adm0_name = '"+ paese + "';"
+    cur.execute(sql_clean)
+    conn.commit()
+
     for inserimento_singolo in lista_inserimento:
-        #print inserimento_singolo
         cur.execute(inserimento_singolo)
 
     try:
         conn.commit()
-        print "Changes saved"
     except:
-        print "Problem in saving data"
+        return "Problem in saving data"
 
     try:
         cur.close()
         conn.close()
-        print "Connection closed"
     except:
-        print "Problem in closing the connection"
+        return "Problem in closing the connection"
+
+    return "Data have been uploaded...\n"
 
 def raccogli_mensili(fillolo):
 
@@ -130,9 +132,9 @@ def process_dict_with_annual_values(paese, adms, dct_valori_inondazione_annuale,
 
         lista = []
         for adm in adms:
-            #print adm
-            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_code, adm2_name FROM sparc_gaul_wfp_iso WHERE adm2_code = '" + adm + "' AND adm0_name = '" + paese + "';"
-            #print sql
+            sql = "SELECT DISTINCT iso3, adm0_name, adm0_code, adm1_code,adm1_name, adm2_code, adm2_name " \
+                  "FROM sparc_gaul_wfp_iso WHERE adm2_code = '" + adm + "' AND adm0_name = '" + paese + "';"
+
             cur.execute(sql)
             risultati = cur.fetchall()
             lista.append(risultati)
@@ -207,19 +209,17 @@ def process_dict_with_annual_values(paese, adms, dct_valori_inondazione_annuale,
 
         return lista, dct_valori_amministrativi, lista_comandi
 
-paese = 'Pakistan'
-proj_dir = "c:/data/tools/sparc/projects/floods/"
-dirOutPaese = proj_dir + paese
-fillolo = dirOutPaese + "/" + paese + ".txt"
-
-raccogli_da_files_anno = collect_annual_data_byRP_from_dbf_country(dirOutPaese)
-adms = []
-for raccolto in raccogli_da_files_anno:
-    adms.append(raccolto)
-raccolti_anno = process_dict_with_annual_values(paese, adms, raccogli_da_files_anno, fillolo)
-inserisci_postgresql(raccolti_anno[2])
-
-raccolti_mese = raccogli_mensili(fillolo)
-inserisci_postgresql(raccolti_mese)
-
-
+# paese = 'Benin'
+# proj_dir = "c:/data/tools/sparc/projects/floods/"
+# dirOutPaese = proj_dir + paese
+# fillolo = dirOutPaese + "/" + paese + ".txt"
+#
+# raccogli_da_files_anno = collect_annual_data_byRP_from_dbf_country(dirOutPaese)
+# adms = []
+# for raccolto in raccogli_da_files_anno:
+#     adms.append(raccolto)
+# raccolti_anno = process_dict_with_annual_values(paese, adms, raccogli_da_files_anno, fillolo)
+# inserisci_postgresql(raccolti_anno[2])
+#
+# raccolti_mese = raccogli_mensili(fillolo)
+# inserisci_postgresql(raccolti_mese)

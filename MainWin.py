@@ -18,12 +18,15 @@ class AppSPARC:
 
         finestra.geometry("450x250+30+30")
 
+        self.area_messaggi = Text(finestra, background="black", foreground="green")
+        self.area_messaggi.place(x =2, y = 30, width=300, height= 215)
+
         self.collect_codes_country_level()
         self.box_value_adm0 = StringVar()
         self.box_adm0 = ttk.Combobox(finestra, textvariable = self.box_value_adm0)
         self.box_adm0['values'] = self.lista_paesi
         self.box_adm0.current(0)
-        self.box_adm0.place(x = 2 , y = 2, width=195, height=25)
+        self.box_adm0.place(x = 25 , y = 2, width=210, height=25)
 
         def cb():
             attivo_nonAttivo = self.var_check.get()
@@ -38,18 +41,26 @@ class AppSPARC:
                 command_drought = "drought per mondo"
 
         self.var_check = IntVar()
+        check_all = Checkbutton(finestra, text="All Countries", variable = self.var_check, command=cb)
+        check_all.place(x =310, y = 5, width=120, height=25)
+
+        frame_flood = Frame(finestra, height=32, width=400, bg="blue")
+        frame_flood.place(x = 305, y = 30, width=140, height=70)
 
         button_flood = Button(finestra, text="Flood Assessment", fg="blue", command=self.national_calc_flood)
-        button_flood.place(x = 200, y = 2, width=120, height=25)
+        button_flood.place(x = 310, y = 35, width=130, height=25)
+
+        button_flood_upload = Button(finestra, text="Upload Data Manually", fg="blue", command=self.flood_upload)
+        button_flood_upload.place(x = 310, y = 70, width=130, height=25)
+
+        frame_drought = Frame(finestra, height=80, width=400, bg="maroon")
+        frame_drought.place(x = 305, y = 105, width=140, height=70)
 
         button_drought = Button(finestra, text="Drought Assessment", fg="maroon", command=self.national_calc_drought)
-        button_drought.place(x =325, y = 2, width=120, height=25)
+        button_drought.place(x = 310, y = 110, width=130, height=25)
 
-        check_all = Checkbutton(finestra, text="All Countries", variable = self.var_check, command=cb)
-        check_all.place(x =10, y = 28, width=120, height=25)
-
-        self.area_messaggi = Text(finestra, background="black", foreground="green")
-        self.area_messaggi.place(x =2, y = 50, width=445, height= 198)
+        button_drought_upload = Button(finestra, text="Upload Data Manually", fg="maroon", command=self.drought_upload)
+        button_drought_upload.place(x = 310, y = 145, width=130, height=25)
 
         finestra.mainloop()
 
@@ -66,7 +77,6 @@ class AppSPARC:
         lista_admin2 = db_conn_drought.admin_2nd_level_list(paese)
 
         for aministrazione in lista_admin2[1].iteritems():
-
             code_admin = aministrazione[0]
             nome_admin = aministrazione[1]['name_clean']
 
@@ -153,6 +163,22 @@ class AppSPARC:
             db_conn_drought.close_connection()
             self.area_messaggi.insert(INSERT, "Data for " + paese + " Uploaded in DB")
 
+    def drought_upload(self):
+
+        paese = self.box_value_adm0.get()
+        import DroughtDataManualUpload as ddup
+
+        proj_dir = "c:/data/tools/sparc/projects/drought/"
+        dirOutPaese = proj_dir + paese
+
+        raccogli_da_files_anno = ddup.collect_drought_poplation_frequencies_frm_dbfs(dirOutPaese)
+        adms=set()
+        for chiave,valori in sorted(raccogli_da_files_anno.iteritems()):
+            adms.add(chiave.split("-")[1])
+        raccolti_anno = ddup.prepare_insert_statements_drought_monthly_values(paese, adms, raccogli_da_files_anno)
+        risultato = ddup.insert_drought_in_postgresql(paese,raccolti_anno[2])
+        self.area_messaggi.insert(INSERT,risultato)
+
     def national_calc_flood(self):
 
         paese = self.box_value_adm0.get()
@@ -171,6 +197,25 @@ class AppSPARC:
         import CountryCalculationsFlood
         CountryCalculationsFlood.data_processing_module_flood(paese)
         CountryCalculationsFlood.data_upload_module_flood(paese)
+
+    def flood_upload(self):
+
+        paese = self.box_value_adm0.get()
+        import FloodDataManualUpload as fdup
+
+        proj_dir = "c:/data/tools/sparc/projects/floods/"
+        dirOutPaese = proj_dir + paese
+        fillolo = dirOutPaese + "/" + paese + ".txt"
+
+        raccogli_da_files_anno = fdup.collect_annual_data_byRP_from_dbf_country(dirOutPaese)
+        adms = []
+        for raccolto in raccogli_da_files_anno:
+            adms.append(raccolto)
+        raccolti_anno = fdup.process_dict_with_annual_values(paese, adms, raccogli_da_files_anno, fillolo)
+        fdup.inserisci_postgresql(paese,raccolti_anno[2])
+        raccolti_mese = fdup.raccogli_mensili(fillolo)
+        risultato = fdup.inserisci_postgresql(paese,raccolti_mese)
+        self.area_messaggi.insert(INSERT, risultato)
 
 root = Tk()
 root.title("SPARC Flood and Drought Assessment")

@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 __author__ = 'fabio.lana'
 
-import CompleteProcessingEMDAT as completeEMDAT
+from Tkinter import *
+import ttk
+
 import pandas as pd
 import pycountry
 
-from Tkinter import *
-import ttk
+from intermedi.interfaces_discontinued import CompleteProcessingEMDAT as completeEMDAT
+
 
 class AppSPARC_EMDAT:
 
