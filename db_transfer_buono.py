@@ -3,7 +3,7 @@ __author__ = 'fabio.lana'
 import pandas as pd
 from sqlalchemy import create_engine, MetaData
 import sys
-from IPy import IP
+
 
 def sqlalch_connect(ip_in, ip_out, table_name):
 
@@ -16,7 +16,7 @@ def sqlalch_connect(ip_in, ip_out, table_name):
     except Exception as e:
         print e.message
 
-    df_in_sql = pd.read_sql_table(table_name, engine_in , index_col='id')
+    df_in_sql = pd.read_sql_table(table_name, engine_in, index_col='id')
 
     engine_out = create_engine(r'postgresql://geonode:geonode@' + ip_out + '/geonode-imports')
     try:
@@ -27,16 +27,11 @@ def sqlalch_connect(ip_in, ip_out, table_name):
     df_in_sql.to_sql(table_name, engine_out, schema='public')
 
 def main():
-
-    if len(sys.argv)<4:
-        print 'Insufficient parameters provided'
-        sys.exit()
-    else:
-        ip_in = IP(sys.argv[1])
-        ip_out = sys.argv[2]
-        table_name = sys.argv[3]
-        print ip_in, ip_out, table_name
-        #sqlalch_connect(ip_in, ip_out, table_name)
+    ip_in = '127.0.0.1'
+    ip_out = '10.65.57.63'
+    tables = ['sparc_population_month']
+    for table_name in tables:
+        sqlalch_connect(ip_in, ip_out, table_name)
 
 if __name__ == "__main__":
     main()

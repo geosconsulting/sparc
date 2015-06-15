@@ -26,51 +26,83 @@ paesi = oggetto_db.gather_paesi()
 
 class AppSPARConflicts:
 
-    def __init__(self, master):
+    def __init__(self, finestraConflicts):
 
-        frame = Frame(master,height=32, width=875)
-        frame.pack_propagate(0)
-        frame.pack()
+        finestraConflicts.geometry("470x325+30+30")
+        self.now = datetime.datetime.now()
 
+        #Scelta Paese Combobox
         self.box_value_country = StringVar()
-        self.box_country = ttk.Combobox(frame, textvariable = [])
+        self.box_country = ttk.Combobox(finestraConflicts, textvariable = [])
         self.box_country['values'] = sorted(paesi)
-        self.box_country.pack(side=LEFT)
+        self.box_country.current(0)
+        self.box_country.place(x = 0 , y = 2, width=250, height=25)
 
+        #Area Messaggi
+        self.area_messaggi = Text(root, height=15, width=85, background="black", foreground="green")
+        self.area_messaggi.place(x= 0, y=30, width=250, height= 215)
+        self.scr = Scrollbar(finestraConflicts, command = self.area_messaggi.yview)
+        self.scr.place(x=240, y= 30, width=10, height=215)
+        self.area_messaggi.config(yscrollcommand=self.scr.set)
+
+        #SEZIONE ANALiSI DATI STORICI FINO 2000
+        frame_historical = LabelFrame(finestraConflicts, text= "Historical Analysis (1973/2001)", bg="pink", relief = SUNKEN,border = 1)
+        frame_historical.place(x = 260, y = 5, width=200, height=130)
+
+        self.select_file = Button(finestraConflicts, text="Load Historical File",  fg="red", command = self.open_file_chooser)
+        self.select_file.place(x = 270, y = 25)
+
+        lista_anni_storici = list(range(1973,2001))
+        #Scelta anni minimo massimo per analisi storica
+        anni = Label(finestraConflicts, text="Minimum/Maximum Years",fg="red",bg="pink")
+        anni.place(x = 270, y = 50, width=166)
         self.box_value_minYear = StringVar()
-        self.box_minYear = ttk.Combobox(frame, textvariable= [])
-        self.box_minYear['values'] = ['2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013']
-        self.box_minYear.pack(side=LEFT)
+        self.box_minYear = ttk.Combobox(finestraConflicts, textvariable= [], width=7)
+        self.box_minYear['values'] = lista_anni_storici
+        self.box_minYear.place(x = 270, y = 70, width=80)
 
         self.box_value_maxYear = StringVar()
-        self.box_maxYear = ttk.Combobox(frame, textvariable = [])
-        self.box_maxYear['values'] = ['2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013']
-        self.box_maxYear.pack(side=LEFT)
+        self.box_maxYear = ttk.Combobox(finestraConflicts, textvariable = [],width=7)
+        self.box_maxYear['values'] = lista_anni_storici
+        self.box_maxYear.place(x = 355, y= 70, width=80)
 
-        #self.iso_bbox = Button(frame, text="ISO BBOX FIPS", fg="blue", command = self.get_iso_bbox)
+        self.calcolo_storico = Button(finestraConflicts, text="Start Analysis", fg="red", command = self.GDELT_historical)
+        self.calcolo_storico.place(x = 270, y= 100, width=120)
+
+        #self.iso_bbox = Button(finestraConflicts, text="ISO BBOX FIPS", fg="blue", command = self.get_iso_bbox)
         #self.iso_bbox.pack(side=LEFT)
 
-        # self.select_file = Button(frame, text="Weekly Trend",  fg="darkgreen", command = self.weekly_trend)
-        # self.select_file.pack(side=LEFT)
+        #SEZIONE ANALiSI DATI CORRENTI DAL 2000
+        in_che_anno_siamo = self.now.year
+        frame_current = LabelFrame(finestraConflicts, text= "Recent Events Analysis (2001/" + str(in_che_anno_siamo) + ")",
+                                   fg="white", bg="darkgreen", relief = SUNKEN,border = 1)
+        frame_current.place(x = 260, y = 140, width=200, height=150)
 
-        self.select_file = Button(frame, text="Current Analysis (2014/2015)", fg="blue", command = self.GDELT_current)
-        self.select_file.pack(side=LEFT)
+        self.analisi_settimanale = Button(finestraConflicts, text="Weekly Trend",  fg="darkgreen", command = self.weekly_trend)
+        self.analisi_settimanale.place(x = 265, y = 160, width=90)
 
-        self.select_file = Button(frame, text="Load Historical File",  fg="red", command = self.open_file_chooser)
-        self.select_file.pack(side=LEFT)
+        self.analisi_mensile = Button(finestraConflicts, text="Monthly Trend",  fg="darkgreen", command = self.weekly_trend)
+        self.analisi_mensile.place(x = 360, y = 160, width=90)
 
-        self.calcolo = Button(frame, text="Historical Analysis (1973/2013)", fg="red", command = self.GDELT_historical)
-        self.calcolo.pack(side=LEFT)
+        #Scelta anni minimo massimo per analisi corrente
+        lista_anni_correnti = list(range(2001,in_che_anno_siamo+1))
+        anni_current = Label(finestraConflicts, text="Minimum/Maximum Years",fg="white",bg="darkgreen")
+        anni_current.place(x = 270, y = 190, width=166)
 
-        self.scrollbar = Scrollbar(root)
-        self.scrollbar.pack(side=RIGHT, fill=Y)
+        self.box_value_minYear = StringVar()
+        self.box_minYear_current = ttk.Combobox(finestraConflicts, textvariable= [], width=7)
+        self.box_minYear_current['values'] = lista_anni_correnti
+        self.box_minYear_current.place(x = 270, y = 210, width=80)
 
-        self.area_messaggi = Text(root, height=15, width=105, background="black", foreground="green")
-        self.area_messaggi.pack()
+        self.box_value_maxYear = StringVar()
+        self.box_maxYear_current = ttk.Combobox(finestraConflicts, textvariable = [],width=7)
+        self.box_maxYear_current['values'] = lista_anni_correnti
+        self.box_maxYear_current.place(x = 355, y= 210, width=80)
 
-        # attach listbox to scrollbar
-        self.area_messaggi.config(yscrollcommand=self.scrollbar.set)
-        self.scrollbar.config(command=self.area_messaggi.yview)
+        self.analisi_corrente = Button(finestraConflicts, text="Start Analysis", fg="darkgreen", command = self.GDELT_current)
+        self.analisi_corrente.place(x = 270, y= 250)
+
+        finestraConflicts.mainloop()
 
     def get_iso_bbox(self):
 
@@ -85,18 +117,20 @@ class AppSPARConflicts:
 
     def weekly_trend(self):
 
-        now = datetime.datetime.now()
-        meno_7 = datetime.timedelta(days=7)
-        mese_passato = now - meno_7
-        massimo = now.strftime("%Y%m%d")
-        minimo = mese_passato.strftime("%Y%m%d")
+        meno_7 = self.now - datetime.timedelta(days = 7)
+        print self.now, meno_7
+
+        massimo = self.now.strftime("%Y%m%d")
+        minimo = meno_7.strftime("%Y%m%d")
+        print massimo,minimo
         self.area_messaggi.insert(INSERT,"Between %s and %s" % (str(massimo), str(minimo)))
 
         fips = self.get_iso_bbox()[2]
-        lista_files = oggetto_fetch.gdelt_connect(minimo, massimo)
-        self.area_messaggi.insert(INSERT, "Found %d files\n" % len(lista_files))
+        self.area_messaggi.insert(INSERT,"FIPS %s" % (str(fips)))
+        lista_files = oggetto_fetch.collect_weekly_list(minimo, massimo)
+        self.area_messaggi.insert(INSERT, "%d files\n" % len(lista_files))
 
-        esito = oggetto_fetch.gdelt_fetch(lista_files, fips)
+        esito = oggetto_fetch.download_process_delete(lista_files, fips)
         self.area_messaggi.insert(INSERT, esito)
 
         weekly_df = oggetto_fetch.gdelt_pandas_conversion(fips)
@@ -116,7 +150,7 @@ class AppSPARConflicts:
         self.area_messaggi.insert(INSERT, "Found %d files\n" % len(lista_files))
         self.area_messaggi.insert(INSERT, "Ultimo file %s primo file %s \n" % (lista_files[0],lista_files[-1]))
 
-        esito = oggetto_fetch.gdelt_fetch(lista_files, fips)
+        esito = oggetto_fetch.download_process_delete(lista_files, fips)
         self.area_messaggi.insert(INSERT, esito)
 
         montly_df = oggetto_fetch.gdelt_pandas_conversion(fips)
@@ -125,12 +159,14 @@ class AppSPARConflicts:
 
         global nomeFile
         nomeFile = tkFileDialog.askopenfilename(parent=root, title='Choose GDELT archive file')
-        print nomeFile
+        print len(nomeFile)
 
-        if nomeFile != None:
+        if nomeFile != None and len(nomeFile)>0:
             self.area_messaggi.insert(INSERT, nomeFile + "\n")
             dimensione_file = os.path.getsize(nomeFile)
             self.area_messaggi.insert(INSERT, " %s bytes in this file \n" % str(dimensione_file))
+        else:
+            pass
 
     def get_fields(self):
 
@@ -170,7 +206,7 @@ class AppSPARConflicts:
 root = Tk()
 root.title("SPARC Conflict Analysis")
 app = AppSPARConflicts(root)
-root.mainloop()
+
 
 
 

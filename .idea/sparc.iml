@@ -19,7 +19,7 @@
       <excludeFolder url="file://$MODULE_DIR$/projects" />
       <excludeFolder url="file://$MODULE_DIR$/sql" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 2.7.5 (C:\Python27\ArcGIS10.2\python.exe)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 2.7.5 virtualenv at C:\Users\fabio.lana\.virtualenvs\updated_agis" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

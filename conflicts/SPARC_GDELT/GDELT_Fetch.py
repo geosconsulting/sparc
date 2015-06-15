@@ -21,6 +21,18 @@ country_files = local_path + 'country/'
 
 class GDELT_Fetch(object):
 
+    def collect_weekly_list(self, data_minima, data_massima):
+
+        # get the list of all the links on the gdelt file page
+        page = requests.get(gdelt_base_url + 'index.html')
+        doc = lh.fromstring(page.content)
+        link_list = doc.xpath("//*/ul/li/a/@href")
+
+        #troviamo i files che corrispondono alla lista settimanale
+        file_list = [x for x in link_list if str.isdigit(x[0:8]) and (x[0:8] >= str(data_minima) and x[0:8] <= str(data_massima))]
+
+        return file_list
+
     def gdelt_connect(self, data_minima, data_massima):
 
         # get the list of all the links on the gdelt file page
@@ -33,15 +45,16 @@ class GDELT_Fetch(object):
 
         return file_list
 
-    def gdelt_fetch(self, file_list, fips_country_code):
+    def download_process_delete(self, file_list, fips_country_code):
 
         infilecounter = 0
         outfilecounter = 0
 
+        print file_list
+
         for compressed_file in file_list[infilecounter:]:
 
             print compressed_file,
-
             # if we dont have the compressed file stored locally, go get it. Keep trying if necessary.
             while not os.path.isfile(down_files + compressed_file):
                 print 'downloading,',
@@ -50,8 +63,10 @@ class GDELT_Fetch(object):
 
             # extract the contents of the compressed file to a temporary directory
             print 'extracting,',
-            z = zipfile.ZipFile(file=down_files + compressed_file, mode='r')
+            z = zipfile.ZipFile(file= down_files + compressed_file, mode='r')
             z.extractall(path=temp_files)
+            z.close()
+            os.remove(down_files + compressed_file)
 
             # parse each of the csv files in the working directory,
             print 'parsing,',
@@ -65,12 +80,11 @@ class GDELT_Fetch(object):
                         if fips_country_code in operator.itemgetter(51, 37, 44)(line.split('\t')):
                             outfile.write(line)
                     outfilecounter += 1
-
                 # delete the temporary file
                 os.remove(infile_name)
             infilecounter += 1
 
-        files_zips = glob.glob(local_path + 'down' + '*.zip')
+        files_zips = glob.glob(down_files + '*.zip')
         for active_zip in files_zips:
             os.remove(active_zip)
 
@@ -91,6 +105,7 @@ class GDELT_Fetch(object):
             DFlist.append(pd.read_csv(active_file, sep='\t', header=None, dtype=str,
                                       names=colnames, index_col=['GLOBALEVENTID']))
 
+        print DFlist
         # Merge the file-based dataframes and save a pickle
         DF = pd.concat(DFlist)
         DF.to_pickle(local_path + 'results/' + 'current_' + fips_country_code + '.pickle')

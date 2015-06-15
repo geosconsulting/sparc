@@ -129,7 +129,7 @@ def fetch_data(anno):
     #stringa_sql = "SELECT * FROM sparc_wfp_areas;"
     #print stringa_sql
 
-    df = psql.read_sql_query(stringa_sql, con=engine)
+    df = pd.read_sql_query(stringa_sql, con=engine)
     #print df.columns.values
     #print df.describe()
     connection.close()
