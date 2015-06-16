@@ -1,21 +1,20 @@
 __author__ = 'fabio.lana'
 
-import requests
-import lxml.html as lh
 import urllib
 import zipfile
 import glob
 import operator
 import os
-import shapefile
 import datetime as dt
 from collections import defaultdict
+
+import requests
+import lxml.html as lh
+import shapefile
 import numpy as np
 import pandas as pd
-import scipy as sp
-import matplotlib.pyplot as plt
 
-import GDELT_DB as gdb
+from conflicts.SPARC_GDELT import GDELT_DB as gdb
 
 gdelt_base_url = 'http://data.gdeltproject.org/events/'
 local_path = '../SPARC_GDELT/GDELT_Data/'

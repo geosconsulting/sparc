@@ -8,7 +8,7 @@ import tkFileDialog
 import os
 import datetime
 
-import GDELT_Fetch
+import GDELT_Processor
 import GDELT_Analysis
 import GDELT_DB
 
@@ -18,8 +18,8 @@ dbname = 'geonode-imports'
 user = 'geonode'
 password = 'geonode'
 
-oggetto_fetch = GDELT_Fetch.GDELT_Fetch()
-oggetto_analysis = GDELT_Analysis.GDELT_Analysis()
+oggetto_data_processor = GDELT_Processor.GDELT_Fetch()
+oggetto_data_analysis = GDELT_Analysis.GDELT_Analysis()
 oggetto_db = GDELT_DB.GDELT_DB(host, schema, dbname, user, password)
 connessione = oggetto_db.apri_connessione()
 paesi = oggetto_db.gather_paesi()
@@ -40,21 +40,21 @@ class AppSPARConflicts:
 
         #Area Messaggi
         self.area_messaggi = Text(root, height=15, width=85, background="black", foreground="green")
-        self.area_messaggi.place(x= 0, y=30, width=250, height= 215)
+        self.area_messaggi.place(x= 0, y=30, width=250, height= 290)
         self.scr = Scrollbar(finestraConflicts, command = self.area_messaggi.yview)
-        self.scr.place(x=240, y= 30, width=10, height=215)
+        self.scr.place(x=240, y= 30, width=10, height=290)
         self.area_messaggi.config(yscrollcommand=self.scr.set)
 
         #SEZIONE ANALiSI DATI STORICI FINO 2000
-        frame_historical = LabelFrame(finestraConflicts, text= "Historical Analysis (1973/2001)", bg="pink", relief = SUNKEN,border = 1)
-        frame_historical.place(x = 260, y = 5, width=200, height=130)
+        frame_historical = LabelFrame(finestraConflicts, text= "Historical Analysis (1979/2013)", bg="burlywood", relief = SUNKEN,border = 1)
+        frame_historical.place(x = 260, y = 5, width=290, height=130)
 
         self.select_file = Button(finestraConflicts, text="Load Historical File",  fg="red", command = self.open_file_chooser)
         self.select_file.place(x = 270, y = 25)
 
-        lista_anni_storici = list(range(1973,2001))
+        lista_anni_storici = list(range(1973,2013))
         #Scelta anni minimo massimo per analisi storica
-        anni = Label(finestraConflicts, text="Minimum/Maximum Years",fg="red",bg="pink")
+        anni = Label(finestraConflicts, text="Minimum/Maximum Years",fg="red",bg="burlywood")
         anni.place(x = 270, y = 50, width=166)
         self.box_value_minYear = StringVar()
         self.box_minYear = ttk.Combobox(finestraConflicts, textvariable= [], width=7)
@@ -74,33 +74,39 @@ class AppSPARConflicts:
 
         #SEZIONE ANALiSI DATI CORRENTI DAL 2000
         in_che_anno_siamo = self.now.year
-        frame_current = LabelFrame(finestraConflicts, text= "Recent Events Analysis (2001/" + str(in_che_anno_siamo) + ")",
-                                   fg="white", bg="darkgreen", relief = SUNKEN,border = 1)
-        frame_current.place(x = 260, y = 140, width=200, height=150)
+        frame_current = LabelFrame(finestraConflicts, text= "Recent Events Analysis",
+                                   fg="white", bg="darkgreen", relief = SUNKEN, border = 1)
+        frame_current.place(x = 260, y = 140, width=200, height=180)
 
         self.analisi_settimanale = Button(finestraConflicts, text="Weekly Trend",  fg="darkgreen", command = self.weekly_trend)
         self.analisi_settimanale.place(x = 265, y = 160, width=90)
 
-        self.analisi_mensile = Button(finestraConflicts, text="Monthly Trend",  fg="darkgreen", command = self.weekly_trend)
+        self.analisi_mensile = Button(finestraConflicts, text="Monthly Trend",  fg="darkgreen", command = self.monthly_trend)
         self.analisi_mensile.place(x = 360, y = 160, width=90)
 
-        #Scelta anni minimo massimo per analisi corrente
-        lista_anni_correnti = list(range(2001,in_che_anno_siamo+1))
-        anni_current = Label(finestraConflicts, text="Minimum/Maximum Years",fg="white",bg="darkgreen")
-        anni_current.place(x = 270, y = 190, width=166)
+        self.analisi_settimanale = Button(finestraConflicts, text="Quarterly",  fg="darkgreen", command = self.quarterly_trend)
+        self.analisi_settimanale.place(x = 265, y = 190, width=90)
 
-        self.box_value_minYear = StringVar()
+        self.analisi_mensile = Button(finestraConflicts, text="Semestral",  fg="darkgreen", command = self.semestral_trend)
+        self.analisi_mensile.place(x = 360, y = 190, width=90)
+
+        #Scelta anni minimo massimo per analisi corrente
+        lista_anni_correnti = list(range(2013,in_che_anno_siamo+1))
+        anni_current = Label(finestraConflicts, text="Minimum/Maximum Years",fg="white",bg="darkgreen")
+        anni_current.place(x = 270, y = 220, width=166)
+
+        self.box_value_minYear_current = StringVar()
         self.box_minYear_current = ttk.Combobox(finestraConflicts, textvariable= [], width=7)
         self.box_minYear_current['values'] = lista_anni_correnti
-        self.box_minYear_current.place(x = 270, y = 210, width=80)
+        self.box_minYear_current.place(x = 270, y = 245, width=80)
 
-        self.box_value_maxYear = StringVar()
+        self.box_value_maxYear_current = StringVar()
         self.box_maxYear_current = ttk.Combobox(finestraConflicts, textvariable = [],width=7)
         self.box_maxYear_current['values'] = lista_anni_correnti
-        self.box_maxYear_current.place(x = 355, y= 210, width=80)
+        self.box_maxYear_current.place(x = 355, y= 245, width=80)
 
         self.analisi_corrente = Button(finestraConflicts, text="Start Analysis", fg="darkgreen", command = self.GDELT_current)
-        self.analisi_corrente.place(x = 270, y= 250)
+        self.analisi_corrente.place(x = 270, y= 280)
 
         finestraConflicts.mainloop()
 
@@ -127,15 +133,90 @@ class AppSPARConflicts:
 
         fips = self.get_iso_bbox()[2]
         self.area_messaggi.insert(INSERT,"FIPS %s" % (str(fips)))
-        lista_files = oggetto_fetch.collect_weekly_list(minimo, massimo)
+        lista_files = oggetto_data_processor.collect_file_list(minimo, massimo)
         self.area_messaggi.insert(INSERT, "%d files\n" % len(lista_files))
 
-        esito = oggetto_fetch.download_process_delete(lista_files, fips)
+        esito = oggetto_data_processor.download_process_delete(lista_files, fips)
         self.area_messaggi.insert(INSERT, esito)
 
-        weekly_df = oggetto_fetch.gdelt_pandas_conversion(fips)
+        paese_weekly = self.box_country.get()
+        oggetto_data_processor.gdelt_pandas_conversion(fips, paese_weekly, 'weekly')
+        df = oggetto_data_analysis.depickle_current("weekly", paese_weekly)
+        oggetto_data_analysis.chart_country(df)
 
-        self.area_messaggi.insert(INSERT, weekly_df)
+    def monthly_trend(self):
+
+        meno_30 = self.now - datetime.timedelta(days = 30)
+        print self.now, meno_30
+
+        massimo = self.now.strftime("%Y%m%d")
+        minimo = meno_30.strftime("%Y%m%d")
+        print massimo,minimo
+        self.area_messaggi.insert(INSERT,"Between %s and %s" % (str(massimo), str(minimo)))
+
+        fips = self.get_iso_bbox()[2]
+        self.area_messaggi.insert(INSERT,"FIPS %s" % (str(fips)))
+
+        lista_files = oggetto_data_processor.collect_file_list(minimo, massimo)
+        self.area_messaggi.insert(INSERT, "%d files\n" % len(lista_files))
+
+        esito = oggetto_data_processor.download_process_delete(lista_files, fips)
+        self.area_messaggi.insert(INSERT, esito)
+
+        paese_montlhy = self.box_country.get()
+        oggetto_data_processor.gdelt_pandas_conversion(fips,paese_montlhy,'monthly')
+        df = oggetto_data_analysis.depickle_current("monthly", paese_montlhy)
+        oggetto_data_analysis.chart_country(df)
+
+    def quarterly_trend(self):
+
+        meno_90 = self.now - datetime.timedelta(days = 90)
+        print self.now, meno_90
+
+        massimo = self.now.strftime("%Y%m%d")
+        minimo = meno_90.strftime("%Y%m%d")
+        print massimo,minimo
+        self.area_messaggi.insert(INSERT,"Between %s and %s" % (str(massimo), str(minimo)))
+
+        fips = self.get_iso_bbox()[2]
+        self.area_messaggi.insert(INSERT,"FIPS %s" % (str(fips)))
+
+        lista_files = oggetto_data_processor.collect_file_list(minimo, massimo)
+        self.area_messaggi.insert(INSERT, "%d files\n" % len(lista_files))
+
+        esito = oggetto_data_processor.download_process_delete(lista_files, fips)
+        self.area_messaggi.insert(INSERT, esito)
+
+        paese_quarterly = self.box_country.get()
+        oggetto_data_processor.gdelt_pandas_conversion(fips,paese_quarterly, 'quarterly')
+
+        df = oggetto_data_analysis.depickle_current("quarterly", paese_quarterly)
+        oggetto_data_analysis.chart_country(df)
+
+    def semestral_trend(self):
+
+        meno_180 = self.now - datetime.timedelta(days = 180)
+        print self.now, meno_180
+
+        massimo = self.now.strftime("%Y%m%d")
+        minimo = meno_180.strftime("%Y%m%d")
+        print massimo,minimo
+        self.area_messaggi.insert(INSERT,"Between %s and %s" % (str(massimo), str(minimo)))
+
+        fips = self.get_iso_bbox()[2]
+        self.area_messaggi.insert(INSERT,"FIPS %s" % (str(fips)))
+
+        lista_files = oggetto_data_processor.collect_file_list(minimo, massimo)
+        self.area_messaggi.insert(INSERT, "%d files\n" % len(lista_files))
+
+        esito = oggetto_data_processor.download_process_delete(lista_files, fips)
+        self.area_messaggi.insert(INSERT, esito)
+
+        paese_semestral = self.box_country.get()
+        oggetto_data_processor.gdelt_pandas_conversion(fips,paese_semestral,'semestral')
+
+        df = oggetto_data_analysis.depickle_current("semestral", paese_semestral)
+        oggetto_data_analysis.chart_country(df)
 
     def GDELT_current(self):
 
@@ -146,14 +227,14 @@ class AppSPARConflicts:
         self.area_messaggi.insert(INSERT,"Between %s and %s \n" % (str(anno_inizio), str(anno_fine)))
 
         fips = self.get_iso_bbox()[2]
-        lista_files = oggetto_fetch.gdelt_connect(anno_inizio, anno_fine)
+        lista_files = oggetto_data_processor.gdelt_connect(anno_inizio, anno_fine)
         self.area_messaggi.insert(INSERT, "Found %d files\n" % len(lista_files))
         self.area_messaggi.insert(INSERT, "Ultimo file %s primo file %s \n" % (lista_files[0],lista_files[-1]))
 
-        esito = oggetto_fetch.download_process_delete(lista_files, fips)
+        esito = oggetto_data_processor.download_process_delete(lista_files, fips)
         self.area_messaggi.insert(INSERT, esito)
 
-        montly_df = oggetto_fetch.gdelt_pandas_conversion(fips)
+        montly_df = oggetto_data_processor.gdelt_pandas_conversion(fips,self.paese,'annual')
 
     def open_file_chooser(self):
 
@@ -170,7 +251,7 @@ class AppSPARConflicts:
 
     def get_fields(self):
 
-        col_names = oggetto_analysis.GDELT_fields(nomeFile)
+        col_names = oggetto_data_analysis.GDELT_fields(nomeFile)
         for i, col_name in enumerate(col_names):
              self.area_messaggi.insert(INSERT, col_name + "\n")
 
@@ -183,7 +264,7 @@ class AppSPARConflicts:
         messaggio = "%s ISO %s between %s and %s \n" % (paese, iso, anno_min, anno_max)
         self.area_messaggi.insert(INSERT, messaggio)
 
-        store_eventi = oggetto_analysis.GDELT_subsetting(nomeFile, iso, anno_min, anno_max)
+        store_eventi = oggetto_data_analysis.GDELT_subsetting(nomeFile, iso, anno_min, anno_max)
 
         import pandas as pd
 
@@ -196,12 +277,12 @@ class AppSPARConflicts:
         quanti_eventi = "There are %d cases %s-related records between %s and %s. " % (len(store_eventi), paese, anno_min, anno_max)
         self.area_messaggi.insert(INSERT, quanti_eventi + "\n")
 
-        coordinate = oggetto_analysis.GDELT_coords(store_eventi)[0]
+        coordinate = oggetto_data_analysis.GDELT_coords(store_eventi)[0]
 
         #statistiche = oggetto_gdelt.GDELTS_stat(coordinate)
         #self.area_messaggi.insert(INSERT, statistiche + "\n")
 
-        oggetto_analysis.GDELT_maplot(coordinate, bbox[0], bbox[1], bbox[3], bbox[2], bbox[5], bbox[4])
+        oggetto_data_analysis.GDELT_maplot(coordinate, bbox[0], bbox[1], bbox[3], bbox[2], bbox[5], bbox[4])
 
 root = Tk()
 root.title("SPARC Conflict Analysis")

@@ -21,7 +21,7 @@ country_files = local_path + 'country/'
 
 class GDELT_Fetch(object):
 
-    def collect_weekly_list(self, data_minima, data_massima):
+    def collect_file_list(self, data_minima, data_massima):
 
         # get the list of all the links on the gdelt file page
         page = requests.get(gdelt_base_url + 'index.html')
@@ -33,6 +33,7 @@ class GDELT_Fetch(object):
 
         return file_list
 
+    #DA RIMUOVERE
     def gdelt_connect(self, data_minima, data_massima):
 
         # get the list of all the links on the gdelt file page
@@ -65,8 +66,8 @@ class GDELT_Fetch(object):
             print 'extracting,',
             z = zipfile.ZipFile(file= down_files + compressed_file, mode='r')
             z.extractall(path=temp_files)
-            z.close()
-            os.remove(down_files + compressed_file)
+            #z.close()
+            #os.remove(down_files + compressed_file)
 
             # parse each of the csv files in the working directory,
             print 'parsing,',
@@ -84,13 +85,13 @@ class GDELT_Fetch(object):
                 os.remove(infile_name)
             infilecounter += 1
 
-        files_zips = glob.glob(down_files + '*.zip')
-        for active_zip in files_zips:
-            os.remove(active_zip)
+        #files_zips = glob.glob(down_files + '*.zip')
+        #for active_zip in files_zips:
+            #os.remove(active_zip)
 
         return 'done'
 
-    def gdelt_pandas_conversion(self, fips_country_code):
+    def gdelt_pandas_conversion(self, fips_country_code,paese, temporal):
 
         # Get the GDELT field names from a helper file
         colnames = pd.read_excel('CSV.header.fieldids.xlsx', sheetname='Sheet1',
@@ -108,7 +109,7 @@ class GDELT_Fetch(object):
         print DFlist
         # Merge the file-based dataframes and save a pickle
         DF = pd.concat(DFlist)
-        DF.to_pickle(local_path + 'results/' + 'current_' + fips_country_code + '.pickle')
+        DF.to_pickle(local_path + 'results/' + temporal +'_' + paese + '.pickle')
 
         # once everything is safely stored away, remove the temporary files
         for active_file in files:
