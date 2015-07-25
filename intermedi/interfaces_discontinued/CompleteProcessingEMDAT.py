@@ -16,13 +16,14 @@ ogr.UseExceptions()
 
 class ScrapingEMDAT(object):
 
-    def __init__(self,hazard):
+    def __init__(self,paese, hazard):
         self.continent = "Africa%27%2C%27Americas%27%2C%27Asia"
+        self.paese = paese
         self.hazard = hazard
         self.stringa_richiesta = 'http://www.emdat.be/disaster_list/php/search.php?continent='+ self.continent + '&region=&iso=&from=1900&to=2015&group=&type=' + self.hazard
         self.engine = create_engine(r'postgresql://geonode:geonode@localhost/geonode-imports')
         self.connection = self.engine.connect()
-        self.table_name = "sparc_emdat_scraping_" + hazard
+        self.table_name = "sparc_emdat_" + paese + "_" + hazard
 
     def scrape_EMDAT(self):
 
@@ -59,8 +60,10 @@ class GeocodeEMDAT(object):
 
     def geolocate_accidents(self, luoghi_incidenti, hazard):
 
-        geocoding_testo = open("c:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + hazard + ".txt", "wb+")
-        geocoding_testo_fail = open("c:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + hazard + "_fail.txt", "wb+")
+        #geocoding_testo = open("c:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + hazard + ".txt", "wb+")
+        #geocoding_testo_fail = open("c:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + hazard + "_fail.txt", "wb+")
+        geocoding_testo = open("D:/JRC WFP/SPARC/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + hazard + ".txt", "wb+")
+        geocoding_testo_fail = open("D:/JRC WFP/SPARC/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + hazard + "_fail.txt", "wb+")
 
         geocoding_testo.write("id,lat,lon\n")
         geocoding_testo_fail.write("id,lat,lon\n")
@@ -87,14 +90,14 @@ class GeocodeEMDAT(object):
     def extract_country_shp(self):
 
             # Get the input Layer
-            inShapefile = "C:/data/tools/sparc/input_data/gaul/gaul_wfp_iso.shp"
+            inShapefile = "D:/JRC WFP/SPARC/sparc/input_data/gaul/gaul_wfp_iso.shp"
             inDriver = ogr.GetDriverByName("ESRI Shapefile")
             inDataSource = inDriver.Open(inShapefile, 0)
             inLayer = inDataSource.GetLayer()
             print "ADM0_NAME = '" + self.paese + "'"
             inLayer.SetAttributeFilter("ADM0_NAME = '" + self.paese + "'")
             # Create the output LayerS
-            outShapefile = "C:/data/tools/sparc/input_data/countries/" + self.paese + ".shp"
+            outShapefile = "D:/JRC WFP/SPARC/sparc/input_data/countries/" + self.paese + ".shp"
             outDriver = ogr.GetDriverByName("ESRI Shapefile")
 
             # Remove output shapefile if it already exists
@@ -139,18 +142,18 @@ class GeocodeEMDAT(object):
 
     def calc_poligono_controllo(self):
 
-        coords_file_in = "c:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + self.hazard + ".txt"
-        coords_file_out = str('c:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/' + str(self.paese) + self.hazard + '.csv')
+        coords_file_in = "D:/JRC WFP/SPARC/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + self.hazard + ".txt"
+        coords_file_out = str('D:/JRC WFP/SPARC/sparc/input_data/geocoded/new_geocoded_EMDAT/' + str(self.paese) + self.hazard + '.csv')
 
         dentro = 0
         fuori = 0
 
-        if os.path.exists("C:/data/tools/sparc/input_data/countries/" + self.paese + ".shp"):
-            sf = shapefile.Reader("C:/data/tools/sparc/input_data/countries/" + self.paese + ".shp")
+        if os.path.exists("D:/JRC WFP/SPARC/sparc/input_data/countries/" + self.paese + ".shp"):
+            sf = shapefile.Reader("D:/JRC WFP/SPARC/sparc/input_data/countries/" + self.paese + ".shp")
         else:
             print "Devo estrarre"
             self.extract_country_shp()
-            sf = shapefile.Reader("C:/data/tools/sparc/input_data/countries/" + self.paese + ".shp")
+            sf = shapefile.Reader("D:/JRC WFP/SPARC/sparc/input_data/countries/" + self.paese + ".shp")
 
         bbox = sf.bbox
         minx, miny, maxx, maxy = [x for x in bbox]
@@ -182,7 +185,7 @@ class CreateGeocodedShp(object):
         self.paese = paese
         self.hazard = hazard
         self.outDriver = ogr.GetDriverByName("ESRI Shapefile")
-        self.outShp = "C:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + self.hazard + ".shp"
+        self.outShp = "D:/JRC WFP/SPARC/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + self.hazard + ".shp"
 
     def creazione_file_shp(self):
 
@@ -195,7 +198,7 @@ class CreateGeocodedShp(object):
         x, y, nomeloc= [], [], []
 
         #read data from csv file and store in lists
-        with open('C:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/'+ self.paese + self.hazard + '.csv', 'rb') as csvfile:
+        with open('D:/JRC WFP/SPARC/sparc/input_data/geocoded/new_geocoded_EMDAT/'+ self.paese + self.hazard + '.csv', 'rb') as csvfile:
             r = csv.reader(csvfile, delimiter=';')
             for i, row in enumerate(r):
                 if i > 0: #skip header
@@ -253,9 +256,5 @@ class ManagePostgresDBEMDAT(object):
         paesi = []
         for paese in self.cur:
             paesi.append(paese[0])
+
         return sorted(paesi)
-
-
-
-
-

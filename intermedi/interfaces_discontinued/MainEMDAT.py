@@ -52,16 +52,19 @@ class AppSPARC_EMDAT:
         #hazard = "Drought"
         hazard = self.box_hazard.get()
 
-        OBJ_EMDAT = completeEMDAT.ScrapingEMDAT(hazard)
+        OBJ_EMDAT = completeEMDAT.ScrapingEMDAT(paese,hazard)
         richiesta_paese = OBJ_EMDAT.scrape_EMDAT()
         danni_paese = richiesta_paese['data']
         df_danni = pd.DataFrame(danni_paese)
         df_danni = df_danni.set_index('disaster_no')
+        print df_danni
 
         #TRATTAMENTO DATI IN DB
-        #OBJ_EMDAT.write_in_db(df_danni)
+        OBJ_EMDAT.write_in_db(df_danni)
+
         #di_che_parliamo = richiesta.read_from_db(hazard)
 
+        '''
         eventi_by_coutry = df_danni.groupby('iso')
         df_paese = eventi_by_coutry.get_group(iso_paese)
         paese = df_paese.country_name[0]
@@ -85,6 +88,9 @@ class AppSPARC_EMDAT:
             OBJ_GISFILE = completeEMDAT.CreateGeocodedShp(paese, hazard)
             OBJ_GISFILE.creazione_file_shp()
         self.area_messaggi.insert(INSERT, "Data for " + paese + " Uploaded in DB")
+
+        OBJ_DB = completeEMDAT.ManagePostgresDBEMDAT
+        '''
 
 root = Tk()
 root.title("SPARC EMDAT Analyzer")
