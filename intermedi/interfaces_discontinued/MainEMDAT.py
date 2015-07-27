@@ -15,6 +15,8 @@ class AppSPARC_EMDAT:
 
     def __init__(self, master):
 
+        self.OBJ_DB = completeEMDAT.ManagePostgresDBEMDAT('geonode', 'geonode')
+
         frame = Frame(master, height=32, width=400)
         frame.pack_propagate(0)
         frame.pack()
@@ -41,56 +43,52 @@ class AppSPARC_EMDAT:
 
     def collect_codes_country_level(self):
 
-        paesi = completeEMDAT.ManagePostgresDBEMDAT()
-        self.lista_paesi = paesi.all_country_db()
+        self.lista_paesi = self.OBJ_DB.all_country_db()
 
     def national_emdata_geocoding(self):
 
         paese = self.box_value_adm0.get()
         iso_paese =  pycountry.countries.get(name=paese).alpha3
+        area =  self.OBJ_DB.select_ancillary_data_country(paese)
 
         #hazard = "Drought"
         hazard = self.box_hazard.get()
 
-        OBJ_EMDAT = completeEMDAT.ScrapingEMDAT(paese,hazard)
+        OBJ_EMDAT = completeEMDAT.ScrapingEMDAT(area, iso_paese, hazard,paese)
         richiesta_paese = OBJ_EMDAT.scrape_EMDAT()
         danni_paese = richiesta_paese['data']
         df_danni = pd.DataFrame(danni_paese)
         df_danni = df_danni.set_index('disaster_no')
-        print df_danni
-
-        #TRATTAMENTO DATI IN DB
         OBJ_EMDAT.write_in_db(df_danni)
+        df_paese = OBJ_EMDAT.read_from_db(hazard)
 
-        #di_che_parliamo = richiesta.read_from_db(hazard)
-
-        '''
-        eventi_by_coutry = df_danni.groupby('iso')
-        df_paese = eventi_by_coutry.get_group(iso_paese)
-        paese = df_paese.country_name[0]
-        iso = df_paese.iso[0]
+        lista_codici = list(df_paese.index.values)
         lista_locazioni = list(df_paese.location)
-        print lista_locazioni
 
+        #for codice in lista_codici:
+        #    print codice
         lista_da_geocodificare = []
-        for locazione in lista_locazioni:
+        #for codice, locazione in lista_locazioni:
+        for codice, locazione in zip(df_paese.index.values,df_paese.location):
             if locazione is not None:
-                loca_splittate = locazione.split(',')
-                for loca in loca_splittate:
-                    lista_da_geocodificare.append(loca.strip())
+               loca_splittate = locazione.split(',')
+               for loca in loca_splittate:
+                   loca_clean = loca.strip()
+                   print codice, loca_clean
+                   lista_da_geocodificare.append(loca_clean)
 
-        OBJ_NOMINATIM = completeEMDAT.GeocodeEMDAT(paese, hazard)
-        OBJ_NOMINATIM.geolocate_accidents(lista_da_geocodificare, hazard)
-        quanti_dentro = OBJ_NOMINATIM.calc_poligono_controllo()
-        trovati_alcuni_dentro = quanti_dentro[0]
-        print "Dentro ci sono %d eventi" % trovati_alcuni_dentro
-        if trovati_alcuni_dentro > 0:
-            OBJ_GISFILE = completeEMDAT.CreateGeocodedShp(paese, hazard)
-            OBJ_GISFILE.creazione_file_shp()
-        self.area_messaggi.insert(INSERT, "Data for " + paese + " Uploaded in DB")
+        # OBJ_NOMINATIM = completeEMDAT.GeocodeEMDAT(paese, hazard)
+        # OBJ_NOMINATIM.geolocate_accidents(lista_da_geocodificare, hazard)
+        # quanti_dentro = OBJ_NOMINATIM.calc_poligono_controllo()
+        # trovati_alcuni_dentro = quanti_dentro[0]
+        # print "Dentro ci sono %d eventi" % trovati_alcuni_dentro
+        # if trovati_alcuni_dentro > 0:
+        #     OBJ_GISFILE = completeEMDAT.CreateGeocodedShp(paese, hazard)
+        #     OBJ_GISFILE.creazione_file_shp()
+        # self.area_messaggi.insert(INSERT, "Data for " + paese + " Uploaded in DB")
+        #
+        # OBJ_DB = completeEMDAT.ManagePostgresDBEMDAT
 
-        OBJ_DB = completeEMDAT.ManagePostgresDBEMDAT
-        '''
 
 root = Tk()
 root.title("SPARC EMDAT Analyzer")

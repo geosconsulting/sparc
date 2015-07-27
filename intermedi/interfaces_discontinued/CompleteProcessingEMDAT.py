@@ -16,11 +16,11 @@ ogr.UseExceptions()
 
 class ScrapingEMDAT(object):
 
-    def __init__(self,paese, hazard):
-        self.continent = "Africa%27%2C%27Americas%27%2C%27Asia"
+    def __init__(self,area, iso_paese, hazard, paese):
+        #self.continent = "Africa%27%2C%27Americas%27%2C%27Asia"
         self.paese = paese
         self.hazard = hazard
-        self.stringa_richiesta = 'http://www.emdat.be/disaster_list/php/search.php?continent='+ self.continent + '&region=&iso=&from=1900&to=2015&group=&type=' + self.hazard
+        self.stringa_richiesta = 'http://www.emdat.be/disaster_list/php/search.php?continent=&region=&iso=' + iso_paese + '&from=1900&to=2015&group=&type=' + self.hazard
         self.engine = create_engine(r'postgresql://geonode:geonode@localhost/geonode-imports')
         self.connection = self.engine.connect()
         self.table_name = "sparc_emdat_" + paese + "_" + hazard
@@ -35,11 +35,12 @@ class ScrapingEMDAT(object):
 
     def write_in_db(self,df_danni):
 
-        df_danni.to_sql(self.table_name, self.engine, schema='public')
+        df_danni.to_sql(self.table_name, self.engine, schema='em-dat')
         self.connection.close()
 
     def read_from_db(self, hazard):
-        df_da_sql = pd.read_sql_table(self.table_name, self.engine, index_col='disaster_no')
+
+        df_da_sql = pd.read_sql_table(self.table_name, self.engine, index_col='disaster_no',schema='em-dat')
         self.connection.close()
         return df_da_sql
 
@@ -60,13 +61,11 @@ class GeocodeEMDAT(object):
 
     def geolocate_accidents(self, luoghi_incidenti, hazard):
 
-        #geocoding_testo = open("c:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + hazard + ".txt", "wb+")
-        #geocoding_testo_fail = open("c:/data/tools/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + hazard + "_fail.txt", "wb+")
         geocoding_testo = open("D:/JRC WFP/SPARC/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + hazard + ".txt", "wb+")
         geocoding_testo_fail = open("D:/JRC WFP/SPARC/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + hazard + "_fail.txt", "wb+")
 
-        geocoding_testo.write("id,lat,lon\n")
-        geocoding_testo_fail.write("id,lat,lon\n")
+        geocoding_testo.write("id,name,lat,lon\n")
+        geocoding_testo_fail.write("id,name,lat,lon\n")
 
         for luogo_incidente in luoghi_incidenti:
             try:
@@ -74,7 +73,6 @@ class GeocodeEMDAT(object):
                 location_geocoded = self.geolocator.geocode(luogo_incidente, timeout=30)
                 if location_geocoded:
                     scrittura = luogo_incidente + "," + str(location_geocoded.longitude) + "," + str(location_geocoded.latitude) + "\n"
-                    print scrittura
                     geocoding_testo.write(scrittura)
                     self.totali += 1
                     self.successo += 1
@@ -229,15 +227,17 @@ class CreateGeocodedShp(object):
 
 class ManagePostgresDBEMDAT(object):
 
+    def __init__(self,user, password):
+
+        self.schema = 'public'
+        self.dbname = "geonode-imports"
+        self.user = user
+        self.password = password
+
     def all_country_db(self):
 
-        schema = 'public'
-        dbname = "geonode-imports"
-        user = "geonode"
-        password = "geonode"
-
         try:
-            connection_string = "dbname=%s user=%s password=%s" % (dbname, user, password)
+            connection_string = "dbname=%s user=%s password=%s" % (self.dbname, self.user,self.password)
             self.conn = psycopg2.connect(connection_string)
         except Exception as e:
             print e.message
@@ -258,3 +258,26 @@ class ManagePostgresDBEMDAT(object):
             paesi.append(paese[0])
 
         return sorted(paesi)
+
+    def select_ancillary_data_country(self, paese):
+
+        try:
+            connection_string = "dbname=%s user=%s password=%s" % (self.dbname, self.user, self.password)
+            self.conn = psycopg2.connect(connection_string)
+        except Exception as e:
+            print e.message
+
+        self.cur = self.conn.cursor()
+        comando = "select * from sparc_wfp_countries as c,sparc_wfp_areas as a where c.name = '" + paese + "' and c.wfp_area=a.area_id;"
+
+        try:
+            self.cur.execute(comando)
+        except psycopg2.ProgrammingError as errore:
+            codice_errore = errore.pgcode
+            print codice_errore
+            return codice_errore
+
+        for valore in self.cur:
+            area = valore[7]
+
+        return area
