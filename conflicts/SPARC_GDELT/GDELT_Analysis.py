@@ -2,163 +2,65 @@ __author__ = 'fabio.lana'
 
 from collections import defaultdict
 import matplotlib.pyplot as plt
-from mpl_toolkits.basemap import Basemap
-import numpy as np
+import pandas as pd
+import shapefile
 
-data_store = []
-point_counts = defaultdict(int)
-interaction_counts = defaultdict(int)
+gdelt_base_url = 'http://data.gdeltproject.org/events/'
+local_path = '../SPARC_GDELT/GDELT_Data/'
+PATH = '../SPARC_GDELT/test_data/'
 
 class GDELT_Analysis(object):
 
-    def GDELT_fields(self,file_name):
+    def depickle_current(self,tempo, paese):
+        local_path = 'C:/data/tools/sparc/conflicts/SPARC_GDELT/test_data/results/'
+        filolo = local_path + tempo + '_' + paese + '.pickle'
+        file_pickle = pd.io.pickle.read_pickle(filolo)
 
-        with open(file_name) as f:
-            col_names = f.readline().split("\t")
+        # Get the GDELT field names from a helper file
+        colnames = pd.read_excel('CSV.header.fieldids.xlsx', sheetname='Sheet1',
+                                 index_col='Column ID', parse_cols=1)['Field Name']
 
-        return col_names
+        #df = pd.DataFrame(data= file_pickle, columns=colnames)
+        df = pd.DataFrame(data= file_pickle)
 
-    def GDELT_subsetting(self, file_name, country, start, end):
+        df['Date'] = pd.Series([pd.to_datetime(date) for date in df['SQLDATE']], index= df.index)
+        df['Year'] = pd.DatetimeIndex(df['Date']).year
+        df['Month'] = pd.DatetimeIndex(df['Date']).month
+        df['Day'] = pd.DatetimeIndex(df['Date']).day
 
-        with open(file_name) as f:
-            next(f)
-            for line in f:
-                line = line.replace('\n', '')
-                #print line
-                split = line.split('\t')
-                #print split
-                anno_corrente = int(split[0][:4])
-                #print anno_corrente
-                if anno_corrente >= int(start) and anno_corrente <= int(end):
-                    actor1 = split[1][:3]
-                    #print actor1
-                    if actor1 == country:
-                        data_store.append(line)
-        return data_store
+        return df
 
-    def GDELT_coords(self,data_store):
+    def chart_country(self,tabella_gdelt):
 
-        for row_corrente in data_store:
-            try:
-                lat_source = float(row_corrente.split("\t")[9])
-                lon_source = float(row_corrente.split("\t")[10])
-                lat_target = float(row_corrente.split("\t")[15])
-                lon_target = float(row_corrente.split("\t")[16])
-                # print lat, lon
-                point_counts[(lat_source, lon_source)] += 1
-                interaction_counts[((lat_source, lon_source), (lat_target, lon_target))] += 1
-            except:
-                pass
+        pivot = pd.pivot_table(tabella_gdelt, values="SQLDATE", index=["Date"], columns=["QuadClass"], aggfunc=len)
+        pivot = pivot.fillna(0) # Replace any missing data with zeros
 
-        return point_counts, interaction_counts
-
-    def GDELTS_stat(self,point_counts):
-
-        # Get some summary statistics
-        counts = np.array(point_counts.values())
-        #global counts_int
-        counts_int = np.array(interaction_counts.values())
-
-        statistiche = {}
-        statistiche["Total points:"] = len(counts)
-        statistiche["Total point-pairs:"] = len(counts_int)
-        statistiche["Min events:"] = counts.min()
-        statistiche["Max events:"] = counts.max()
-        statistiche["Mean events:"] = counts.mean()
-        statistiche["Median points:"] = np.median(counts)
-        return statistiche
-
-    def GDELT_maplot(self, point_counts, centro_lat, centro_lon, llat, llon, ulat, ulon): #,centro_lat,centro_lon,llat,llon,ulat,ulon):
-
-        # print point_counts
-        # print centro_lat, centro_lon, llat, llon, ulat, ulon
-
-        def get_size(count):
-            ''' Convert a count to a point size. Log-scaled.'''
-            scale_factor = 2
-            return np.log10(count + 1) * scale_factor
-
-        # Note that we're drawing on a regular matplotlib figure, so we set the
-        # figure size just like we would any other.
-        plt.figure(figsize=(10, 10))
-
-        # Create the Basemap
-        event_map = Basemap(projection='merc',
-                            resolution='l', area_thresh=1000.0,  # Low resolution
-                            lat_0= centro_lat, lon_0=centro_lon,  # Map center
-                            llcrnrlon=llon, llcrnrlat=llat,  # Lower left corner
-                            urcrnrlon=ulon, urcrnrlat=ulat)  # Upper right corner
-
-        # Draw important features
-        event_map.drawcoastlines()
-        event_map.drawcountries()
-        event_map.fillcontinents(color='0.8')  # Light gray
-        event_map.drawmapboundary()
-
-        # Draw the points on the map:
-        for point, count in point_counts.iteritems():
-            x, y = event_map(point[1], point[0])  # Convert lat, long to y,x
-            # print x , y
-            marker_size = get_size(count)
-            event_map.plot(x, y, 'ro', markersize=marker_size, alpha=0.3)
-
+        # Now we no longer need the Year and Month columns, so let's drop them:
+        pivot = pivot[["1", "2", "3", "4"]]
+        # Rename the QuadCat columns
+        pivot = pivot.rename(columns={"1": "Material Cooperation",
+                                      "2": "Verbal Cooperation",
+                                      "3": "Verbal Conflict",
+                                      "4": "Material Conflict"})
+        pivot.plot(figsize=(12, 6))
         plt.show()
 
-    def SOLO_maplot(self, centro_lat, centro_lon, llat, llon, ulat, ulon):
+    def gdelt_country_gis_file(self,tabella_gdelt, paese):
 
-        # Note that we're drawing on a regular matplotlib figure, so we set the
-        # figure size just like we would any other.
-        plt.figure(figsize=(6, 6))
+        df = tabella_gdelt[['Year', 'Actor1Name', 'Actor1Geo_FullName', 'Actor2Geo_Lat', 'Actor2Geo_Long']]
+        df = df.dropna()
+        print df.head()
+        out_file = 'test_data/shps/' + paese + '.shp'
+        w = shapefile.Writer(shapefile.POINT)
+        w.autoBalance = 1  # ensures geometry and attributes match
+        w.field('id', 'F', 15, 0)
+        for illo in range(0, len(df)):
+            coords = df.iloc[illo][3:5]
+            print df.index[illo], coords[0], coords[1]
+            w.point(float(coords[0]), float(coords[1]))
+            w.record(df.index[illo])
 
-        # Create the Basemap
-        event_map = Basemap(projection='lcc',
-                            resolution= None,
-                            lat_0 = centro_lat, lon_0=centro_lon,  # Map center
-                            llcrnrlon=llon, llcrnrlat=llat,  # Lower left corner
-                            urcrnrlon=ulon, urcrnrlat=ulat)  # Upper right corner
-        # Draw important features
-        event_map.bluemarble()
+        # Save shapefile
+        w.save(out_file)
 
-        plt.show()
-
-    def GDELT_interactions_maplot(self,counts_int):
-
-        max_val = np.log10(counts_int.max())
-
-        def get_alpha(interaction_counts):
-            '''
-            Convert a count to an alpha val.
-            Log-scaled
-            '''
-            scale = np.log10(interaction_counts)
-            return (scale/max_val) * 0.25
-
-        # Draw the basemap like before
-        plt.figure(figsize=(12,12))
-        event_map = Basemap(projection='merc',
-                            resolution='l', area_thresh=1000.0,  # Low resolution
-                            lat_0=15, lon_0=30,  # Map center
-                            llcrnrlon=10, llcrnrlat=1,  # Lower left corner
-                            urcrnrlon=50, urcrnrlat=30)  # Upper right corner
-        # Draw important features
-        event_map.drawcoastlines()
-        event_map.drawcountries()
-        event_map.fillcontinents(color='0.8')
-        event_map.drawmapboundary()
-
-        # Draw the lines on the map:
-        for arc, count in interaction_counts.iteritems():
-            point1, point2 = arc
-            y1, x1 = point1
-            y2, x2 = point2
-
-            # Only plot lines where both points are on our map:
-            if ((x1 > 10 and x1 < 100 and y1 > 20 and y1 < 70) and
-                (x2 > 10 and x2 < 100 and y2 > 20 and y2 < 70)):
-
-                line_alpha = get_alpha(count)
-
-                # Draw the great circle line
-                event_map.drawgreatcircle(x1, y1, x2, y2, linewidth=2,color='r', alpha=line_alpha)
-        plt.show()
 
