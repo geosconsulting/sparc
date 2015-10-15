@@ -304,11 +304,11 @@ p_rp = [(25, 1964), (50, 1532), (100, 9053), (200, 16710), (500, 1819), (1000, 1
 dizio_valori = ordina_dati(p_rp)
 
 print dizio_valori[2]
-#minimo, massimo, media, deviazione_standard = dizionario_to_pandas(dizio_valori[2])
-#print minimo, massimo, media, deviazione_standard
-
-#print(area_under_curve(media, deviazione_standard, minimo, massimo))
-#calcolo_pdf_manuale(dizio_valori)
+# minimo, massimo, media, deviazione_standard = dizionario_to_pandas(dizio_valori[2])
+# print minimo, massimo, media, deviazione_standard
+#
+# print(area_under_curve(media, deviazione_standard, minimo, massimo))
+# calcolo_pdf_manuale(dizio_valori)
 
 dct_p_rp = plot_affected(dizio_valori[0])
 dat_prob_plot = plot_risk_curve(dct_p_rp[1])

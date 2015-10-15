@@ -182,7 +182,7 @@ class AppSPARC:
         calcolo = CountryCalculationsFlood.data_processing_module_flood(paese)
         self.area_messaggi.insert(INSERT, calcolo)
 
-        data_upload  = CountryCalculationsFlood.data_upload_module_flood(paese)
+        data_upload = CountryCalculationsFlood.data_upload_module_flood(paese)
         self.area_messaggi.insert(INSERT, data_upload)
 
     def world_calc_flood(self):

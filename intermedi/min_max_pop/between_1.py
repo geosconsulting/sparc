@@ -109,10 +109,10 @@ def calcolo_aree_grafici(dati_per_plot):
 
     # Compute the area using the composite trapezoidal rule
     area = trapz(y, x=[1964, 31233], dx=1)
-    print("area = %.2f " % area)
+    print("area trapezi= %.2f " % area)
 
-    area1 = trapz(y)
-    print("area = %.2f " % area1)
+    #area1 = trapz(y)
+    #print("area = %.2f " % area1)
 
 def curve_fitting_r2(dict_people_affected):
 
@@ -122,7 +122,7 @@ def curve_fitting_r2(dict_people_affected):
     #x = np.linspace(0,4,50)
     x = dict_people_affected
     #y = func(x, 2.5, 1.3, 0.5)
-    y = func(x,)
+    y = func(x)
     yn = y + 0.2 * np.random.normal(size=len(x))
 
     popt, pcov = curve_fit(func, x, yn)
@@ -155,8 +155,8 @@ def dizionario_to_pandas(dizio_valori_passato):
 
 def discrete(xk,pk):
 
-    #xk = np.arange(7)
-    #pk = (0.1, 0.2, 0.3, 0.1, 0.1, 0.0, 0.2)
+    xk = np.arange(6)
+    pk = (4, 2, 1, 0.5, 0.2, 0.1)
 
     custm = st.rv_discrete(name='custm', values=(xk, pk))
     fig, ax = plt.subplots(1, 1)
@@ -172,10 +172,12 @@ tr = dizio_valori[1]
 pop_tr = dizio_valori[2]
 pop_cum = dizio_valori[3]
 
-# plot_affected(dict(zip(tr, pop_tr)))
-# plot_affected(dict(zip(tr, pop_cum)))
-# plot_risk_curve(dict(zip(tr, pop_tr)))
-# dat_prob_plot_perc = plot_risk_curve_tr(dict(zip(tr, pop_cum)))
-# calcolo_aree_grafici(dat_prob_plot_perc)
-#curve_fitting_r2()
-discrete(pop_cum, tr)
+#plot_affected(dict(zip(tr, pop_tr)))
+#plot_affected(dict(zip(tr, pop_cum)))
+#plot_risk_curve(dict(zip(tr, pop_tr)))
+rp_cumulati = dict(zip(tr, pop_cum))
+dat_prob_plot_perc = plot_risk_curve_tr(rp_cumulati)
+calcolo_aree_grafici(dat_prob_plot_perc)
+#print dizionario_to_pandas(dizio_valori)
+#curve_fitting_r2(rp_cumulati)
+#discrete(pop_cum, tr)
