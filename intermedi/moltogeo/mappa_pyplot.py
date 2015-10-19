@@ -2,8 +2,8 @@ def plot_mappa(paese):
 
     def GetExtent(gt,cols,rows):
         ext=[]
-        xarr=[0, cols]
-        yarr=[0, rows]
+        xarr = [0, cols]
+        yarr = [0, rows]
 
         for px in xarr:
             for py in yarr:
