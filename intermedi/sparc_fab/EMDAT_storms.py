@@ -7,6 +7,7 @@ import csv
 import os
 import re
 import pycountry
+import psycopg2
 from geopy.geocoders import Nominatim
 from geopy.geocoders import GeoNames
 import shapefile
@@ -71,8 +72,8 @@ class GeocodeEMDAT(object):
         geocoding_testo = open("c:/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + hazard + ".txt", "wb+")
         geocoding_testo_fail = open("c:/sparc/input_data/geocoded/new_geocoded_EMDAT/" + self.paese + hazard + "_fail.txt", "wb+")
 
-        geocoding_testo.write("id,lat,lon\n")
-        geocoding_testo_fail.write("id,lat,lon\n")
+        geocoding_testo.write("id,lat,lon,em_dat\n")
+        geocoding_testo_fail.write("id,lat,lon,em_dat\n")
 
         for luogo_incidente in luoghi_incidenti:
             try:
@@ -156,6 +157,7 @@ class GeocodeEMDAT(object):
         fuori = 0
 
         if os.path.exists("C:/sparc/input_data/countries/" + self.paese + ".shp"):
+            print "File controllo trovato in" + str("C:/sparc/input_data/countries/" + self.paese + ".shp")
             sf = shapefile.Reader("C:/sparc/input_data/countries/" + self.paese + ".shp")
         else:
             print "Devo estrarre"
@@ -232,7 +234,10 @@ class CreateGeocodedShp(object):
             w.record(k,nomeloc[j]) #write the attributes
 
         #Save shapefile
-        w.save(self.outShp)
+        if len(w._shapes)> 0:
+            w.save(self.outShp)
+        else:
+            None
 
 class ManagePostgresDBEMDAT(object):
 
@@ -265,7 +270,7 @@ class ManagePostgresDBEMDAT(object):
             paesi.append(paese[0])
         return sorted(paesi)
 
-paese = pycountry.countries.get(name = 'Madagascar')
+paese = pycountry.countries.get(name = 'Thailand')
 iso = paese.alpha3
 nome_paese = paese.name
 
@@ -311,7 +316,7 @@ for locazioni in locations_df:
                 for indice_annidato in range(0, len(locazione_annidata)):
                     locazioni_da_inviare_alla_geocodifica.append(str(locazione_annidata[indice_annidato]).strip())
 
-print locazioni_da_inviare_alla_geocodifica
+#print locazioni_da_inviare_alla_geocodifica
 geocodiamo.geolocate_accidents(locazioni_da_inviare_alla_geocodifica,'Storm')
 geocodiamo.extract_country_shp()
 geocodiamo.calc_poligono_controllo()
